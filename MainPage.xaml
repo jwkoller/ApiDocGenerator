@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="APIDocGenerator.MainPage"
+             xmlns:viewmodel="clr-namespace:APIDocGenerator.ViewModels"
+             x:DataType="viewmodel:MainViewModel"
+             BackgroundColor="#003B4F"
+             Title=""
+             Shell.NavBarIsVisible="False">
+    
+    <ContentPage.Resources>
+        <Style x:Key="buttonStyle" TargetType="Button">
+            <Setter Property="MinimumWidthRequest" Value="145"/>
+            <Setter Property="BackgroundColor" Value="#088199"/>
+            <Setter Property="TextColor" Value="White"/>
+        </Style>
+        <Style x:Key="entryStyle" TargetType="Entry">
+            <Setter Property="BackgroundColor" Value="#FFFFFF"/>
+            <Setter Property="MinimumWidthRequest" Value="500"/>
+            <Setter Property="HorizontalOptions" Value="Center"/>
+        </Style>
+        
+    </ContentPage.Resources>
+    <VerticalStackLayout
+            Spacing="25"
+            VerticalOptions="Center">
+        <Label  Text="Select folder for controllers and destination for document"
+                Style="{StaticResource SubHeadline}"
+                TextColor="#E8B00F"
+                SemanticProperties.HeadingLevel="Level1" />
+        <HorizontalStackLayout HorizontalOptions="Center"
+                               Spacing="30">
+            <Button Command="{Binding SelectSourceFolderCommand}"
+                Text="Select Source"
+                HorizontalOptions="Center"
+                Style="{StaticResource buttonStyle}"/>
+            <Entry x:Name="sourceFolder"
+               Text="{Binding SelectedSource}"
+               Placeholder="Enter source folder path"
+               Completed="SourceFolderPathCompletedEvent"
+               Style="{StaticResource entryStyle}"/>
+        </HorizontalStackLayout>
+        
+        <HorizontalStackLayout HorizontalOptions="Center"
+                               Spacing="30">
+            <Button Command="{Binding SelectDestinationFolderCommand}"
+                Text="Select Destination"
+                HorizontalOptions="Center"
+                Style="{StaticResource buttonStyle}"/>
+            
+            <Entry x:Name="destinationFolder"
+               Text="{Binding SelectedDestination}"
+               Placeholder="Enter destination folder path"
+               Completed="DestinationFolderPathCompletedEvent"
+               Style="{StaticResource entryStyle}"/>
+        </HorizontalStackLayout>
+        
+        <Button Clicked="GenerateDocumentEvent"
+                Text="Generate Document"
+                HorizontalOptions="Center"
+                Style="{StaticResource buttonStyle}"/>
+    </VerticalStackLayout>
+
+</ContentPage>
