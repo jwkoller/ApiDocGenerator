@@ -26,54 +26,61 @@
         </Style>
 
     </ContentPage.Resources>
-    <VerticalStackLayout
+    <VerticalStackLayout Spacing="60"
+                         VerticalOptions="Center">
+        <Label  Text="API Routing Documentation Generator"
+                Style="{StaticResource Headline}"
+                TextColor="#E8B00F"/>
+        <VerticalStackLayout
             Spacing="25"
             VerticalOptions="Center">
-        <Label  Text="Select folder for controllers and destination for document"
-                Style="{StaticResource SubHeadline}"
+            <Label  Text="Select folder for controllers and destination for document"
                 TextColor="#E8B00F"
+                HorizontalOptions="Center"
                 SemanticProperties.HeadingLevel="Level1" />
-        <HorizontalStackLayout HorizontalOptions="Center"
+            <HorizontalStackLayout HorizontalOptions="Center"
                                Spacing="30">
-            <Button Command="{Binding SelectSourceFolderCommand}"
+                <Button Command="{Binding SelectSourceFolderCommand}"
                 Text="Select Source"
                 HorizontalOptions="Center"
                 Style="{StaticResource buttonStyle}"/>
-            <Entry x:Name="sourceFolder"
+                <Entry x:Name="sourceFolder"
                Text="{Binding SelectedSource}"
                Placeholder="Enter source folder path"
                Completed="SourceFolderPathCompletedEvent"
                Style="{StaticResource entryStyle}"/>
-        </HorizontalStackLayout>
+            </HorizontalStackLayout>
 
-        <HorizontalStackLayout HorizontalOptions="Center"
+            <HorizontalStackLayout HorizontalOptions="Center"
                                Spacing="30">
-            <Button Command="{Binding SelectDestinationFolderCommand}"
+                <Button Command="{Binding SelectDestinationFolderCommand}"
                 Text="Select Destination"
                 HorizontalOptions="Center"
                 Style="{StaticResource buttonStyle}"/>
 
-            <Entry x:Name="destinationFolder"
+                <Entry x:Name="destinationFolder"
                Text="{Binding SelectedDestination}"
                Placeholder="Enter destination folder path"
                Completed="DestinationFolderPathCompletedEvent"
                Style="{StaticResource entryStyle}"/>
-        </HorizontalStackLayout>
-        <VerticalStackLayout Spacing="10"
+            </HorizontalStackLayout>
+            <VerticalStackLayout Spacing="10"
                              VerticalOptions="Center">
-            <Label Text="File name: "
+                <Label Text="File name: "
                HorizontalOptions="Center"
                    TextColor="#E8B00F"/>
-            <Entry x:Name="fileName"
+                <Entry x:Name="fileName"
                Text="{Binding FileName}"
                Placeholder="File name"
                Completed="FileNameCompletedEvent"
                Style="{StaticResource entryStyleSmall}"/>
-        </VerticalStackLayout>
-        <Button Clicked="GenerateDocumentEvent"
+            </VerticalStackLayout>
+            <Button Clicked="GenerateDocumentEvent"
                 Text="Generate Document"
                 HorizontalOptions="Center"
                 Style="{StaticResource buttonStyle}"/>
+        </VerticalStackLayout>
     </VerticalStackLayout>
+
 
 </ContentPage>
