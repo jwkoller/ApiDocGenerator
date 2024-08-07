@@ -19,7 +19,12 @@
             <Setter Property="MinimumWidthRequest" Value="500"/>
             <Setter Property="HorizontalOptions" Value="Center"/>
         </Style>
-        
+        <Style x:Key="entryStyleSmall" TargetType="Entry">
+            <Setter Property="BackgroundColor" Value="#FFFFFF"/>
+            <Setter Property="MinimumWidthRequest" Value="300"/>
+            <Setter Property="HorizontalOptions" Value="Center"/>
+        </Style>
+
     </ContentPage.Resources>
     <VerticalStackLayout
             Spacing="25"
@@ -40,21 +45,31 @@
                Completed="SourceFolderPathCompletedEvent"
                Style="{StaticResource entryStyle}"/>
         </HorizontalStackLayout>
-        
+
         <HorizontalStackLayout HorizontalOptions="Center"
                                Spacing="30">
             <Button Command="{Binding SelectDestinationFolderCommand}"
                 Text="Select Destination"
                 HorizontalOptions="Center"
                 Style="{StaticResource buttonStyle}"/>
-            
+
             <Entry x:Name="destinationFolder"
                Text="{Binding SelectedDestination}"
                Placeholder="Enter destination folder path"
                Completed="DestinationFolderPathCompletedEvent"
                Style="{StaticResource entryStyle}"/>
         </HorizontalStackLayout>
-        
+        <VerticalStackLayout Spacing="10"
+                             VerticalOptions="Center">
+            <Label Text="File name: "
+               HorizontalOptions="Center"
+                   TextColor="#E8B00F"/>
+            <Entry x:Name="fileName"
+               Text="{Binding FileName}"
+               Placeholder="File name"
+               Completed="FileNameCompletedEvent"
+               Style="{StaticResource entryStyleSmall}"/>
+        </VerticalStackLayout>
         <Button Clicked="GenerateDocumentEvent"
                 Text="Generate Document"
                 HorizontalOptions="Center"

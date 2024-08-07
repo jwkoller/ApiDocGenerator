@@ -35,11 +35,18 @@ namespace APIDocGenerator
             try
             {
                 await _viewModel.GenerateDocument();
-                await Toast.Make($"{_viewModel.FileName} created.", CommunityToolkit.Maui.Core.ToastDuration.Long).Show();
+                await DisplayAlert("Success", $"{_viewModel.FileName}.docx created.", "Ok");
             } catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
+                await DisplayAlert("Error", $"Document creation failed: {ex.Message}.", "Ok");
             }
+        }
+
+        private void FileNameCompletedEvent(object sender, EventArgs e)
+        {
+            string fileName = ((Entry)sender).Text;
+            _viewModel.FileName = fileName;
         }
     }
 

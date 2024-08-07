@@ -5,14 +5,8 @@ namespace APIDocGenerator.Services
 {
     public class FileReaderService
     {
-        private readonly ILogger<FileReaderService> _logger;
-
-        public FileReaderService(ILogger<FileReaderService> logger) { 
-            _logger = logger;
-        }
-
         /// <summary>
-        /// 
+        /// Returns list of .cs files in provided directory.
         /// </summary>
         /// <param name="directoryPath"></param>
         /// <returns></returns>
@@ -24,7 +18,7 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
-        /// 
+        /// Returns lines in the file that start with '[', '///', or 'public'.
         /// </summary>
         /// <param name="filePath"></param>
         /// <returns></returns>
@@ -32,9 +26,7 @@ namespace APIDocGenerator.Services
         {
             IEnumerable<string> lines = File.ReadAllLines(filePath).Select(x => x.Trim());
 
-            return lines.Where(x => !string.IsNullOrWhiteSpace(x) && (x.StartsWith('[') || x.StartsWith("///")));
-        }
-
-        
+            return lines.Where(x => !string.IsNullOrWhiteSpace(x) && (x.StartsWith('[') || x.StartsWith("///") || x.StartsWith("public")));
+        }        
     }
 }
