@@ -81,6 +81,17 @@ namespace APIDocGenerator.ViewModels
             if (string.IsNullOrWhiteSpace(FileName))
             {
                 throw new Exception("File name must be set");
+            } else
+            {
+                if (FileName.Contains(".docx"))
+                {
+                    FileName = FileName.Replace(".docx", "");
+                }
+
+                if (FileName.Contains(".doc"))
+                {
+                    FileName = FileName.Replace(".doc", "");
+                }
             }
 
             if (string.IsNullOrWhiteSpace(SelectedDestination))
