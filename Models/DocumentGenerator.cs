@@ -24,6 +24,10 @@ namespace APIDocGenerator.Services
             Body = MainPart.Document.AppendChild(new Body());
         }
 
+        /// <summary>
+        /// Creates a new paragraph with a bolded heading.
+        /// </summary>
+        /// <param name="heading"></param>
         public void WriteNewParagraph(string heading)
         {
             Paragraph paragraph = Body.AppendChild(new Paragraph());
@@ -44,22 +48,35 @@ namespace APIDocGenerator.Services
             paragraph.AppendChild(run);
         }
 
+        /// <summary>
+        /// Writes a new comment section to the last paragraph element.
+        /// </summary>
+        /// <param name="text"></param>
         public void WriteCommentLine(string text)
         {
             Paragraph last = Body.Elements<Paragraph>().Last();         
             Run run = last.AppendChild(new Run());
+            RunProperties props = new RunProperties();
+            props.FontSize = new FontSize() { Val = "24" };
 
+            run.AppendChild(props);
             run.AppendChild(new Text(Environment.NewLine));
             run.AppendChild(new Text(text));
             run.AppendChild(new Text(Environment.NewLine));
         }
 
+        /// <summary>
+        /// Writes a new formatted route to the last paragraph element.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="text"></param>
         public void WriteRouteLine(string type, string text)
         {
             Paragraph last = Body.Elements<Paragraph>().Last();
             Run run = last.AppendChild(new Run());
             RunProperties props = new RunProperties();
-            props.FontSize = new FontSize() { Val = "28" };
+            props.FontSize = new FontSize() { Val = "24" };
+            
             switch (type)
             {
                 case "HttpGet":
@@ -80,11 +97,18 @@ namespace APIDocGenerator.Services
             run.AppendChild(new Text($"{type}: "));
 
             Run next = last.AppendChild(new Run());
-            next.AppendChild(new Text(text));
+            RunProperties nextProps = new RunProperties();
+            nextProps.Bold = new Bold();
+            nextProps.FontSize = new FontSize() { Val = "24" };
+
+            next.Append(nextProps);
+            next.AppendChild(new Text($"/{text}"));
             next.AppendChild(new Text(Environment.NewLine));
         }
 
-
+        /// <summary>
+        /// Disposes of the active document.
+        /// </summary>
         public void Save()
         {
             Document.Dispose();
