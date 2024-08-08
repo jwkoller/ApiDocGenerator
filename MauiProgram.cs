@@ -23,6 +23,9 @@ namespace APIDocGenerator
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainViewModel>();
             builder.Services.AddSingleton<IFolderPicker>(FolderPicker.Default);
+
+            builder.Services.AddScoped<FileReaderService>();
+            builder.Services.AddScoped<TextParserService>();
             
 #if DEBUG
             builder.Logging.AddTraceLogger(options =>

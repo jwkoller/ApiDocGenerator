@@ -22,7 +22,6 @@ namespace APIDocGenerator.Services
             MainPart = Document.AddMainDocumentPart();
             MainPart.Document = new Document();
             Body = MainPart.Document.AppendChild(new Body());
-            AddDocumentStyles();
         }
 
         public void WriteNewParagraph(string heading)
@@ -36,7 +35,7 @@ namespace APIDocGenerator.Services
             Run run = new Run();
             RunProperties props = new RunProperties();
             props.Bold = new Bold();
-            props.FontSize = new FontSize() { Val = "36"};
+            props.FontSize = new FontSize() { Val = "40"};
 
             run.Append(props);
             run.AppendChild(new Text(Environment.NewLine));
@@ -45,53 +44,46 @@ namespace APIDocGenerator.Services
             paragraph.AppendChild(run);
         }
 
-        public void WriteNewLine(string newLine)
+        public void WriteCommentLine(string text)
         {
             Paragraph last = Body.Elements<Paragraph>().Last();         
             Run run = last.AppendChild(new Run());
+
             run.AppendChild(new Text(Environment.NewLine));
-            run.AppendChild(new Text(newLine));
+            run.AppendChild(new Text(text));
+            run.AppendChild(new Text(Environment.NewLine));
         }
 
-        public void AddDocumentStyles()
+        public void WriteRouteLine(string type, string text)
         {
-            if(Document.MainDocumentPart == null)
+            Paragraph last = Body.Elements<Paragraph>().Last();
+            Run run = last.AppendChild(new Run());
+            RunProperties props = new RunProperties();
+            props.FontSize = new FontSize() { Val = "28" };
+            switch (type)
             {
-                throw new ArgumentNullException();
+                case "HttpGet":
+                    props.Color = new Color() { Val = "15a612" };
+                    break;
+                case "HttpPost":
+                    props.Color = new Color() { Val = "467be3" };
+                    break;
+                case "HttpPut":
+                    props.Color = new Color() { Val = "e0da1d" };
+                    break;
+                case "HttpDelete":
+                    props.Color = new Color() { Val = "e03614" };
+                    break;
             }
 
-            StyleDefinitionsPart? stylePart = Document.MainDocumentPart?.StyleDefinitionsPart;
+            run.Append(props);          
+            run.AppendChild(new Text($"{type}: "));
 
-            if (stylePart == null) {
-                stylePart = Document.MainDocumentPart?.AddNewPart<StyleDefinitionsPart>();
-            }
-
-            Styles? stylesCollection = stylePart?.Styles;
-
-            if(stylesCollection == null)
-            {
-                stylesCollection = new Styles();
-                stylesCollection.Save(stylePart);
-            }
-
-            Style style = new Style
-            {
-                Type = StyleValues.Paragraph,
-                StyleId = "Heading 1",
-                CustomStyle = true,
-                Default = true
-            };
-
-            style.Append(new StyleName() { Val = "Heading 1" });
-
-            StyleRunProperties props = new StyleRunProperties();
-            props.Append(new Color() { ThemeColor = ThemeColorValues.Accent2 });
-            props.Append(new Bold());
-            props.Append(new FontSize() { Val = "36" });
-
-            style.Append(props);
-            stylesCollection.Append(style);
+            Run next = last.AppendChild(new Run());
+            next.AppendChild(new Text(text));
+            next.AppendChild(new Text(Environment.NewLine));
         }
+
 
         public void Save()
         {
