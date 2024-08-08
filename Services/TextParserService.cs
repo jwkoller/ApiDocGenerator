@@ -91,15 +91,21 @@ namespace APIDocGenerator.Services
             string? returnsElem = (string?)xml.Element("returns");
 
             IEnumerable<XElement> exceptNodes = xml.Elements("exception");
-            string? exceptElem = string.Join(Environment.NewLine, exceptNodes.Select(x => $"Exception: ({x.Attribute("cref")}) {x.Value}"));
+            string? exceptElem = string.Join(Environment.NewLine, exceptNodes.Select(x => $"Exception: (Type: {x.Attribute("cref")?.Value}) {x.Value}"));
             
             StringBuilder output = new StringBuilder();
-            output.AppendLine($"Summary: {summaryElem}");
+            output.Append($"Summary: {summaryElem}");
             if(!string.IsNullOrEmpty(paramElem)) 
             {
-                output.AppendLine(paramElem);
-            }        
-            output.Append($"Returns: {returnsElem}");
+                output.AppendLine();
+                output.Append(paramElem);
+            }
+            
+            if(!string.IsNullOrEmpty(returnsElem))
+            {
+                output.AppendLine();
+                output.Append($"Returns: {returnsElem}");
+            }
 
             if (!string.IsNullOrEmpty(exceptElem))
             {
