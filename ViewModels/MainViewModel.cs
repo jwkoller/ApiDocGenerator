@@ -121,7 +121,9 @@ namespace APIDocGenerator.ViewModels
                 docGenerator.WriteNewParagraph(paragraphHeader);
 
                 string routeLine = fileLines.First(x => x.Contains("Route("));
-                string parsedControllerRoute = routeLine.Split('"')[1].Replace("[controller]",controllerRouting);
+                string parsedControllerRoute = routeLine.Split('"')[1]
+                    .Replace("[controller]",controllerRouting)
+                    .Replace("v{v: apiVersion}", $"{{{versionString}}}");
 
                 List<string> endpointLines = _parserService.GetLinesAtFirstEndpoint(fileLines).ToList();
 
