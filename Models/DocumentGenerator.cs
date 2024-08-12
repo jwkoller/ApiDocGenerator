@@ -39,8 +39,8 @@ namespace APIDocGenerator.Services
             Run run = new Run();
             RunProperties props = new RunProperties();
             props.Bold = new Bold();
-            props.FontSize = new FontSize() { Val = "40"};
-
+            props.FontSize = new FontSize() { Val = "32"};
+            
             run.Append(props);
             run.AppendChild(new Text(Environment.NewLine));
             run.AppendChild(new Text(heading));
@@ -104,6 +104,32 @@ namespace APIDocGenerator.Services
             next.Append(nextProps);
             next.AppendChild(new Text($"/{text}"));
             next.AppendChild(new Text(Environment.NewLine));
+        }
+
+        /// <summary>
+        /// Adds a 20pt font-size, bolded, centered line of text.
+        /// </summary>
+        /// <param name="headerText"></param>
+        public void AddTitleLine(string headerText)
+        {
+            Paragraph paragraph = Body.AppendChild(new Paragraph());
+            if (!paragraph.Elements<ParagraphProperties>().Any())
+            {
+                paragraph.PrependChild(new ParagraphProperties());
+            }
+
+            Run run = new Run();
+            RunProperties props = new RunProperties();
+            props.Bold = new Bold();
+            props.FontSize = new FontSize() { Val = "40" };
+            Justification centered = new Justification() { Val = JustificationValues.Center };
+            props.Append(centered);
+
+            run.Append(props);
+            run.AppendChild(new Text(Environment.NewLine));
+            run.AppendChild(new Text(headerText));
+            run.AppendChild(new Text(Environment.NewLine));
+            paragraph.AppendChild(run);
         }
 
         /// <summary>
