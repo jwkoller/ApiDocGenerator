@@ -1,8 +1,5 @@
-﻿using DocumentFormat.OpenXml.Office2013.Excel;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+﻿using APIDocGenerator.Models;
 using System.Text;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace APIDocGenerator.Services
@@ -78,33 +75,66 @@ namespace APIDocGenerator.Services
                 }
             }
 
+            // find the method signature line for this block of comments
+            int methodSigIdx = 0;
+            for(int i = lastIdx + 1; i < lines.Count; i++)
+            {
+                if (lines[i].StartsWith("public "))
+                {
+                    methodSigIdx = i;
+                    break;
+                }
+            }
+
+            // get the comment block and convert back to single XML parseable string
             IEnumerable<string> comments = lines.GetRange(currIdx, (lastIdx - currIdx) + 1).Select(x => x.Replace("///", "").Trim());
             string xmlString = string.Join("", comments);
-            // .Parse won't do fragments like the comments, needs a root node
+            // .Parse won't do fragments like the comment structure, needs a root node
             XElement xml = XElement.Parse($"<root>{xmlString}</root>");
 
-            string? summaryElem = (string?)xml.Element("summary");
+            // get the method signature string
+            string methodSig = lines[methodSigIdx];
+            // substring out the parameters - this is predicated upon only one set of parens in the method sig
+            string methodSigParams = methodSig[(methodSig.IndexOf('(') + 1)..];
+            methodSigParams = methodSigParams[..methodSigParams.LastIndexOf(')')];
+            // split any parameters into parts
+            IEnumerable<MethodSignatureParams> paramObjects = methodSigParams.Split(",").Select(x => new MethodSignatureParams(x.Trim()));
 
+            // go through each parameter comment and get where it's coming from by the method sig info
             IEnumerable<XElement> paramNodes = xml.Elements("param");
-            string? paramElem = string.Join(Environment.NewLine, paramNodes.Select(x => $"Param: ({x.Attribute("name")?.Value}) {x.Value}"));
+            List<string> listOfParamsStrings = new List<string>();
+            foreach(XElement node in paramNodes)
+            {
+                string? name = node.Attribute("name")?.Value;
+                string nodeValue = node.Value;
+                string parameterOrigin = string.Empty;
+                MethodSignatureParams? paramObj = paramObjects.FirstOrDefault(x => x.Name == name);
+                if(paramObj != default)
+                {
+                    parameterOrigin = $"{paramObj.FromLocation} ";
+                }
+                listOfParamsStrings.Add($"Param: ({parameterOrigin}{name}) {nodeValue}");
+            }
 
-            string? returnsElem = (string?)xml.Element("returns");
+            string paramElemString = string.Join(Environment.NewLine, listOfParamsStrings);
+            string? summaryElemString = (string?)xml.Element("summary");
+            string? returnsElemString = (string?)xml.Element("returns");
 
             IEnumerable<XElement> exceptNodes = xml.Elements("exception");
             string? exceptElem = string.Join(Environment.NewLine, exceptNodes.Select(x => $"Exception: (Type: {x.Attribute("cref")?.Value}) {x.Value}"));
             
             StringBuilder output = new StringBuilder();
-            output.Append($"Summary: {summaryElem}");
-            if(!string.IsNullOrEmpty(paramElem)) 
+            output.Append($"Summary: {summaryElemString}");
+            if(!string.IsNullOrEmpty(paramElemString)) 
             {
                 output.AppendLine();
-                output.Append(paramElem);
+                output.Append(paramElemString);
             }
             
-            if(!string.IsNullOrEmpty(returnsElem))
+            if(!string.IsNullOrEmpty(returnsElemString))
             {
                 output.AppendLine();
-                output.Append($"Returns: {returnsElem}");
+                output.Append($"Returns: {returnsElemString}");
             }
 
             if (!string.IsNullOrEmpty(exceptElem))

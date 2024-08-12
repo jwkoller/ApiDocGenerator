@@ -1,10 +1,8 @@
 ﻿using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using Style = DocumentFormat.OpenXml.Wordprocessing.Style;
 using Color = DocumentFormat.OpenXml.Wordprocessing.Color;
 using FontSize = DocumentFormat.OpenXml.Wordprocessing.FontSize;
 using DocumentFormat.OpenXml;
-using CommunityToolkit.Mvvm.DependencyInjection;
 
 namespace APIDocGenerator.Services
 {
