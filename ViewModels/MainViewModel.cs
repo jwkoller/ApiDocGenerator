@@ -107,6 +107,8 @@ namespace APIDocGenerator.ViewModels
             IEnumerable<FileInfo> sourceFiles = FileReaderService.GetFiles(SelectedSource);
             DocumentGenerator docGenerator = new DocumentGenerator(SelectedDestination, FileName);
 
+            docGenerator.AddTitleLine(FileName);
+
             foreach(FileInfo file in sourceFiles)
             {
                 string controllerName = file.Name[..file.Name.IndexOf(".cs")];

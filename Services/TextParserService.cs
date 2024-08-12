@@ -78,7 +78,7 @@ namespace APIDocGenerator.Services
                 }
             }
 
-            IEnumerable<string> comments = lines.GetRange(currIdx, (lastIdx - currIdx) + 1).Select(x => x.Replace("/// ", "").Replace("///",""));
+            IEnumerable<string> comments = lines.GetRange(currIdx, (lastIdx - currIdx) + 1).Select(x => x.Replace("///", "").Trim());
             string xmlString = string.Join("", comments);
             // .Parse won't do fragments like the comments, needs a root node
             XElement xml = XElement.Parse($"<root>{xmlString}</root>");
@@ -86,7 +86,7 @@ namespace APIDocGenerator.Services
             string? summaryElem = (string?)xml.Element("summary");
 
             IEnumerable<XElement> paramNodes = xml.Elements("param");
-            string? paramElem = string.Join(Environment.NewLine, paramNodes.Select(x => $"Param: ({x.Attribute("name")}) {x.Value}"));
+            string? paramElem = string.Join(Environment.NewLine, paramNodes.Select(x => $"Param: ({x.Attribute("name")?.Value}) {x.Value}"));
 
             string? returnsElem = (string?)xml.Element("returns");
 
