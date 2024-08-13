@@ -46,7 +46,7 @@ namespace APIDocGenerator.Services
 
             for (int i = index - 1; i > -1; i--)
             {
-                if (!lines.ElementAt(i).StartsWith("///"))
+                if (!lines.ElementAt(i).StartsWith("///") && !lines.ElementAt(i).StartsWith('['))
                 {
                     index = i + 1; 
                     break;
