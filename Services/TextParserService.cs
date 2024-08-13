@@ -41,12 +41,13 @@ namespace APIDocGenerator.Services
         /// <returns></returns>
         public IEnumerable<string> GetLinesAtFirstEndpoint(IEnumerable<string> lines)
         {
-            string firstHttp = lines.First(x => x.StartsWith("[Http"));
-            int index = lines.ToList().IndexOf(firstHttp);
+            List<string> listOfLines = lines.ToList();
+            string firstHttp = listOfLines.First(x => x.StartsWith("[Http"));
+            int index = listOfLines.IndexOf(firstHttp);
 
             for (int i = index - 1; i > -1; i--)
             {
-                if (!lines.ElementAt(i).StartsWith("///") && !lines.ElementAt(i).StartsWith('['))
+                if (!listOfLines[i].StartsWith("///") && !listOfLines[i].StartsWith('['))
                 {
                     index = i + 1; 
                     break;
