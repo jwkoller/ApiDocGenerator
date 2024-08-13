@@ -26,6 +26,13 @@ namespace APIDocGenerator
 
             builder.Services.AddScoped<FileReaderService>();
             builder.Services.AddScoped<TextParserService>();
+
+            builder.Logging.AddStreamingFileLogger(options =>
+            {
+                options.FolderPath = $"{AppDomain.CurrentDomain.BaseDirectory}\\__Logs";
+                options.MinLevel = LogLevel.Information;
+                options.RetainDays = 30;
+            });
             
 #if DEBUG
             builder.Logging.AddTraceLogger(options =>

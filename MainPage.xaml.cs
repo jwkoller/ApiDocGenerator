@@ -38,7 +38,7 @@ namespace APIDocGenerator
                 await DisplayAlert("Success", $"{_viewModel.FileName}.docx created.", "Ok");
             } catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                _logger.LogError($"{ex}");
                 await DisplayAlert("Error", $"Document creation failed: {ex.Message}.", "Ok");
             }
         }
