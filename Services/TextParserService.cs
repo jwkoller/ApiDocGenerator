@@ -64,7 +64,6 @@ namespace APIDocGenerator.Services
         /// <param name="lines"></param>
         /// <param name="currIdx"></param>
         /// <returns></returns>
-        //public (int, string) GetParsedXMLString(List<string> lines, int currIdx)
         public (int, List<KeyValuePair<string, string>>) GetParsedXMLString(List<string> lines, int currIdx)
         {
             int lastIdx = 0;
