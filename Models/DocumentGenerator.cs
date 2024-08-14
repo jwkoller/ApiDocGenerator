@@ -64,6 +64,35 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
+        /// Constructs a new comment section under the last paragraph with from the list of
+        /// key value pairs. The key is bolded for each line.
+        /// </summary>
+        /// <param name="commentLines"></param>
+        public void WriteCommentLine(List<KeyValuePair<string, string>> commentLines)
+        {
+            Paragraph last = Body.Elements<Paragraph>().Last();
+            Run newLine = last.AppendChild(new Run());
+            newLine.AppendChild(new Text(Environment.NewLine));
+
+            foreach(KeyValuePair<string, string> line in commentLines)
+            {
+                Run run = last.AppendChild(new Run());
+                RunProperties props = new RunProperties();
+                props.FontSize = new FontSize() { Val = "24" };
+                props.Bold = new Bold();
+                run.AppendChild(props);
+                run.AppendChild(new Text(line.Key));
+
+                Run next = last.AppendChild(new Run());
+                RunProperties nextProps = new RunProperties();
+                props.FontSize = new FontSize() { Val = "24" };
+                next.AppendChild(nextProps);
+                next.AppendChild(new Text(line.Value));
+                next.AppendChild(new Text(Environment.NewLine));
+            }
+        }
+
+        /// <summary>
         /// Writes a new formatted route to the last paragraph element.
         /// </summary>
         /// <param name="type"></param>

@@ -115,35 +115,40 @@ namespace APIDocGenerator.ViewModels
                 string controllerRouting = controllerName.Replace("Controller", "").ToLower();
                 IEnumerable<string> fileLines = FileReaderService.GetValidFileLines(file.FullName);
 
+
                 string versionString = _parserService.GetVersionInfo(fileLines);
+                string? routeLine = fileLines.FirstOrDefault(x => x.Contains("Route("));
 
-                string paragraphHeader = $"{controllerName} {versionString}";
-                docGenerator.WriteNewParagraph(paragraphHeader);
-
-                string routeLine = fileLines.First(x => x.Contains("Route("));
-                string parsedControllerRoute = routeLine.Split('"')[1]
-                    .Replace("[controller]",controllerRouting)
-                    .Replace("v{v: apiVersion}", $"{{{versionString}}}");
-
-                List<string> endpointLines = _parserService.GetLinesAtFirstEndpoint(fileLines).ToList();
-
-                for(int i = 0; i < endpointLines.Count; i++)
+                // if the controller has no routing info, probably a base or abstract for inheritance
+                if(routeLine != default)
                 {
-                    string copy = endpointLines[i];
-                    if (copy.StartsWith("[Http"))
-                    {
-                        var (type, endpoint) = _parserService.GetEndPointRouting(copy);
-                        string outPut = $"{parsedControllerRoute}{endpoint}";
-                        docGenerator.WriteRouteLine(type, outPut);
-                    }
+                    string parsedControllerRoute = routeLine.Split('"')[1]
+                        .Replace("[controller]", controllerRouting)
+                        .Replace("v{v:apiVersion}", $"{{{versionString}}}");
 
-                    if (copy.StartsWith("///"))
+                    string paragraphHeader = $"{controllerName} {versionString}";
+                    docGenerator.WriteNewParagraph(paragraphHeader);
+
+                    List<string> endpointLines = _parserService.GetLinesAtFirstEndpoint(fileLines).ToList();
+
+                    for (int i = 0; i < endpointLines.Count; i++)
                     {
-                        var (lastIdx, output) = _parserService.GetParsedXMLString(endpointLines, i);
-                        i = lastIdx; // skip past other lines in same comment section
-                        docGenerator.WriteCommentLine(output);
+                        string copy = endpointLines[i];
+                        if (copy.StartsWith("[Http"))
+                        {
+                            var (type, endpoint) = _parserService.GetEndPointRouting(copy);
+                            string outPut = $"{parsedControllerRoute}{endpoint}";
+                            docGenerator.WriteRouteLine(type, outPut);
+                        }
+
+                        if (copy.StartsWith("///"))
+                        {
+                            var (lastIdx, output) = _parserService.GetParsedXMLString(endpointLines, i);
+                            i = lastIdx; // skip past other lines in same comment section
+                            docGenerator.WriteCommentLine(output);
+                        }
                     }
-                }             
+                }       
             }
 
             docGenerator.Save();

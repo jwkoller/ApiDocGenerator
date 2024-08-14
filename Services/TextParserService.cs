@@ -58,13 +58,14 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
-        /// Returns a formatted string of the xml comments in plain language with elements separated by line breaks, and the index of 
-        /// the last line of comments for this section so they can be skipped over.
+        /// Returns a list of key value pairs with of the parsed XML comments, with the key of each KVP being the type,
+        /// and the value being the content.
         /// </summary>
         /// <param name="lines"></param>
         /// <param name="currIdx"></param>
         /// <returns></returns>
-        public (int, string) GetParsedXMLString(List<string> lines, int currIdx)
+        //public (int, string) GetParsedXMLString(List<string> lines, int currIdx)
+        public (int, List<KeyValuePair<string, string>>) GetParsedXMLString(List<string> lines, int currIdx)
         {
             int lastIdx = 0;
             for(int i = currIdx + 1; i < lines.Count; i++)
@@ -77,12 +78,19 @@ namespace APIDocGenerator.Services
             }
 
             // find the method signature line for this block of comments
-            int methodSigIdx = 0;
+            string methodSignature = string.Empty;
             for(int i = lastIdx + 1; i < lines.Count; i++)
             {
                 if (lines[i].StartsWith("public "))
                 {
-                    methodSigIdx = i;
+                    methodSignature = lines[i];
+                    int nextLine = 1;
+                    // longer method sigs can be split over multiple lines
+                    while (methodSignature.LastIndexOf(')') == -1 && methodSignature.LastIndexOf('{') == -1)
+                    {
+                        methodSignature += $" {lines[i + nextLine]}";
+                        nextLine++;
+                    }
                     break;
                 }
             }
@@ -93,10 +101,8 @@ namespace APIDocGenerator.Services
             // .Parse won't do fragments like the comment structure, needs a root node
             XElement xml = XElement.Parse($"<root>{xmlString}</root>");
 
-            // get the method signature string
-            string methodSig = lines[methodSigIdx];
             // substring out the parameters - this is predicated upon only one set of parens in the method sig
-            string methodSigParams = methodSig[(methodSig.IndexOf('(') + 1)..];
+            string methodSigParams = methodSignature[(methodSignature.IndexOf('(') + 1)..];
             methodSigParams = methodSigParams[..methodSigParams.LastIndexOf(')')];
             // split any parameters into parts
             IEnumerable<MethodSignatureParams> paramObjects = methodSigParams.Split(",").Select(x => new MethodSignatureParams(x.Trim()));
@@ -114,37 +120,37 @@ namespace APIDocGenerator.Services
                 {
                     parameterOrigin = $"{paramObj.FromLocation} ";
                 }
-                listOfParamsStrings.Add($"Param: ({parameterOrigin}{name}) {nodeValue}");
+                listOfParamsStrings.Add($"({parameterOrigin}{name}) {nodeValue}");
             }
 
-            string paramElemString = string.Join(Environment.NewLine, listOfParamsStrings);
             string? summaryElemString = (string?)xml.Element("summary");
             string? returnsElemString = (string?)xml.Element("returns");
 
             IEnumerable<XElement> exceptNodes = xml.Elements("exception");
-            string? exceptElem = string.Join(Environment.NewLine, exceptNodes.Select(x => $"Exception: (Type: {x.Attribute("cref")?.Value}) {x.Value}"));
-            
-            StringBuilder output = new StringBuilder();
-            output.Append($"Summary: {summaryElemString}");
-            if(!string.IsNullOrEmpty(paramElemString)) 
+            IEnumerable<string> exceptionElemStrings = exceptNodes.Select(x => $"(Type: {x.Attribute("cref")?.Value}) {x.Value}");
+           
+            List<KeyValuePair<string, string>> commentLines = new List<KeyValuePair<string, string>>();
+            if(!string.IsNullOrEmpty(summaryElemString))
             {
-                output.AppendLine();
-                output.Append(paramElemString);
-            }
-            
-            if(!string.IsNullOrEmpty(returnsElemString))
-            {
-                output.AppendLine();
-                output.Append($"Returns: {returnsElemString}");
+                commentLines.Add(new KeyValuePair<string, string>("Summary: ", summaryElemString));
             }
 
-            if (!string.IsNullOrEmpty(exceptElem))
+            foreach (string line in listOfParamsStrings)
             {
-                output.AppendLine();
-                output.Append(exceptElem);
+                commentLines.Add(new KeyValuePair<string, string>("Param: ", line));
             }
 
-            return (lastIdx, output.ToString());
+            if (!string.IsNullOrEmpty(returnsElemString))
+            {
+                commentLines.Add(new KeyValuePair<string, string>("Returns: ", returnsElemString));
+            }
+
+            foreach(string line in exceptionElemStrings)
+            {
+                commentLines.Add(new KeyValuePair<string, string>("Exception: ", line));
+            }
+
+            return (lastIdx, commentLines);
         }
     }
 }
