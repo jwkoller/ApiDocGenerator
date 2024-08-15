@@ -40,9 +40,9 @@ namespace APIDocGenerator.Services
             props.FontSize = new FontSize() { Val = "32"};
             
             run.Append(props);
-            run.AppendChild(new Text(Environment.NewLine));
+            run.AppendChild(new Break());
             run.AppendChild(new Text(heading));
-            run.AppendChild(new Text(Environment.NewLine));
+            run.AppendChild(new Break());
             paragraph.AppendChild(run);
         }
 
@@ -58,9 +58,9 @@ namespace APIDocGenerator.Services
             props.FontSize = new FontSize() { Val = "24" };
 
             run.AppendChild(props);
-            run.AppendChild(new Text(Environment.NewLine));
+            run.AppendChild(new Break());
             run.AppendChild(new Text(text));
-            run.AppendChild(new Text(Environment.NewLine));
+            run.AppendChild(new Break());
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace APIDocGenerator.Services
         {
             Paragraph last = Body.Elements<Paragraph>().Last();
             Run newLine = last.AppendChild(new Run());
-            newLine.AppendChild(new Text(Environment.NewLine));
+            newLine.AppendChild(new Break());
 
             foreach(KeyValuePair<string, string> line in commentLines)
             {
@@ -88,7 +88,7 @@ namespace APIDocGenerator.Services
                 props.FontSize = new FontSize() { Val = "24" };
                 next.AppendChild(nextProps);
                 next.AppendChild(new Text(line.Value));
-                next.AppendChild(new Text(Environment.NewLine));
+                next.AppendChild(new Break());
             }
         }
 
@@ -130,7 +130,7 @@ namespace APIDocGenerator.Services
 
             next.Append(nextProps);
             next.AppendChild(new Text($"/{text}"));
-            next.AppendChild(new Text(Environment.NewLine));
+            next.AppendChild(new Break());
         }
 
         /// <summary>
@@ -153,9 +153,9 @@ namespace APIDocGenerator.Services
             props.Append(centered);
 
             run.Append(props);
-            run.AppendChild(new Text(Environment.NewLine));
+            run.AppendChild(new Break());
             run.AppendChild(new Text(headerText));
-            run.AppendChild(new Text(Environment.NewLine));
+            run.AppendChild(new Break());
             paragraph.AppendChild(run);
         }
 
