@@ -41,7 +41,7 @@ namespace APIDocGenerator.Services
             
             run.Append(props);
             run.AppendChild(new Break());
-            run.AppendChild(new Text(heading));
+            run.AppendChild(new Text() { Text = heading, Space = SpaceProcessingModeValues.Preserve });
             run.AppendChild(new Break());
             paragraph.AppendChild(run);
         }
@@ -59,7 +59,7 @@ namespace APIDocGenerator.Services
 
             run.AppendChild(props);
             run.AppendChild(new Break());
-            run.AppendChild(new Text(text));
+            run.AppendChild(new Text() { Text = text, Space = SpaceProcessingModeValues.Preserve });
             run.AppendChild(new Break());
         }
 
@@ -81,13 +81,13 @@ namespace APIDocGenerator.Services
                 props.FontSize = new FontSize() { Val = "24" };
                 props.Bold = new Bold();
                 run.AppendChild(props);
-                run.AppendChild(new Text(line.Key));
+                run.AppendChild(new Text() { Text = line.Key, Space = SpaceProcessingModeValues.Preserve });
 
                 Run next = last.AppendChild(new Run());
                 RunProperties nextProps = new RunProperties();
                 props.FontSize = new FontSize() { Val = "24" };
                 next.AppendChild(nextProps);
-                next.AppendChild(new Text(line.Value));
+                next.AppendChild(new Text() { Text = line.Value, Space = SpaceProcessingModeValues.Preserve });
                 next.AppendChild(new Break());
             }
         }
@@ -121,7 +121,7 @@ namespace APIDocGenerator.Services
             }
 
             run.Append(props);          
-            run.AppendChild(new Text($"{type}: "));
+            run.AppendChild(new Text() { Text = $"{type}: ", Space = SpaceProcessingModeValues.Preserve });
 
             Run next = last.AppendChild(new Run());
             RunProperties nextProps = new RunProperties();
@@ -129,7 +129,7 @@ namespace APIDocGenerator.Services
             nextProps.FontSize = new FontSize() { Val = "24" };
 
             next.Append(nextProps);
-            next.AppendChild(new Text($"/{text}"));
+            next.AppendChild(new Text() { Text = $"/{text}", Space = SpaceProcessingModeValues.Preserve });
             next.AppendChild(new Break());
         }
 
@@ -145,16 +145,17 @@ namespace APIDocGenerator.Services
                 paragraph.PrependChild(new ParagraphProperties());
             }
 
+            Justification centered = new Justification() { Val = JustificationValues.Center };
+            paragraph.ParagraphProperties?.Append(centered);
+
             Run run = new Run();
             RunProperties props = new RunProperties();
             props.Bold = new Bold();
             props.FontSize = new FontSize() { Val = "40" };
-            Justification centered = new Justification() { Val = JustificationValues.Center };
-            props.Append(centered);
 
             run.Append(props);
             run.AppendChild(new Break());
-            run.AppendChild(new Text(headerText));
+            run.AppendChild(new Text() { Text = headerText });
             run.AppendChild(new Break());
             paragraph.AppendChild(run);
         }

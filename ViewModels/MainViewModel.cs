@@ -126,6 +126,11 @@ namespace APIDocGenerator.ViewModels
                         .Replace("[controller]", controllerRouting)
                         .Replace("v{v:apiVersion}", $"{{{versionString}}}");
 
+                    if (!parsedControllerRoute.Contains("api"))
+                    {
+                        parsedControllerRoute = $"/api{parsedControllerRoute}";
+                    }
+
                     string paragraphHeader = $"{controllerName} {versionString}";
                     docGenerator.WriteNewParagraph(paragraphHeader);
 
