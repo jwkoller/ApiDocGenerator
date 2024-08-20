@@ -7,7 +7,7 @@ namespace APIDocGenerator
     public partial class MainPage : ContentPage
     {
         private readonly ILogger<MainPage> _logger;
-        private MainViewModel _viewModel;
+        private readonly MainViewModel _viewModel;
 
         public MainPage(ILogger<MainPage> logger, MainViewModel viewModel)
         {
