@@ -103,7 +103,8 @@ namespace APIDocGenerator.Services
             Run run = last.AppendChild(new Run());
             RunProperties props = new RunProperties();
             props.FontSize = new FontSize() { Val = "24" };
-            
+            props.Bold = new Bold();
+
             switch (type)
             {
                 case "HttpGet":
