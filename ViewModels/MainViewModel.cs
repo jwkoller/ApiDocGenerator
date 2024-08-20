@@ -128,7 +128,7 @@ namespace APIDocGenerator.ViewModels
 
                     if (!parsedControllerRoute.Contains("api"))
                     {
-                        parsedControllerRoute = $"/api{parsedControllerRoute}";
+                        parsedControllerRoute = $"api/{parsedControllerRoute}";
                     }
 
                     string paragraphHeader = $"{controllerName} {versionString}";
