@@ -31,7 +31,7 @@ namespace APIDocGenerator
             {
                 options.FolderPath = $"{AppDomain.CurrentDomain.BaseDirectory}\\__Logs";
                 options.MinLevel = LogLevel.Information;
-                options.RetainDays = 30;
+                options.RetainDays = 15;
             });
             
 #if DEBUG
