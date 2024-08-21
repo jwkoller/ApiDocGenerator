@@ -96,7 +96,7 @@ namespace APIDocGenerator.Services
 
             // get the comment block and convert back to single XML parseable string
             IEnumerable<string> comments = lines.GetRange(currIdx, (lastIdx - currIdx) + 1).Select(x => x.Replace("///", "").Trim());
-            string xmlString = string.Join("", comments);
+            string xmlString = string.Join(" ", comments);
             // .Parse won't do fragments like the comment structure, needs a root node
             XElement xml = XElement.Parse($"<root>{xmlString}</root>");
 
@@ -119,14 +119,14 @@ namespace APIDocGenerator.Services
                 {
                     parameterOrigin = $"{paramObj.FromLocation} ";
                 }
-                listOfParamsStrings.Add($"({parameterOrigin}{name}) {nodeValue}");
+                listOfParamsStrings.Add($"{parameterOrigin}{name}: {nodeValue}");
             }
 
             string? summaryElemString = (string?)xml.Element("summary");
             string? returnsElemString = (string?)xml.Element("returns");
 
             IEnumerable<XElement> exceptNodes = xml.Elements("exception");
-            IEnumerable<string> exceptionElemStrings = exceptNodes.Select(x => $"(Type: {x.Attribute("cref")?.Value}) {x.Value}");
+            IEnumerable<string> exceptionElemStrings = exceptNodes.Select(x => $"[Type: {x.Attribute("cref")?.Value}] {x.Value}");
            
             List<KeyValuePair<string, string>> commentLines = new List<KeyValuePair<string, string>>();
             if(!string.IsNullOrEmpty(summaryElemString))
