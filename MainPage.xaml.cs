@@ -11,16 +11,17 @@ namespace APIDocGenerator
         private readonly string[] _commandLineArgs;
         public MainPage(ILogger<MainPage> logger, MainViewModel viewModel)
         {
-            InitializeComponent();
-            BindingContext = viewModel;
-
             _viewModel = viewModel;
-            _logger = logger;
             _commandLineArgs = Environment.GetCommandLineArgs();
-            if(_commandLineArgs.Length == 4)
+            if (_commandLineArgs.Length == 4)
             {
                 RunCommandLineArgs();
             }
+
+            InitializeComponent();
+            BindingContext = viewModel;
+
+            _logger = logger;
         }
 
         private void RunCommandLineArgs()
