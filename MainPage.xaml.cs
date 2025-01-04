@@ -31,11 +31,11 @@ namespace APIDocGenerator
 
             if (!Directory.Exists(source))
             {
-                _logger.LogError($"Source directory \"{source}\" is invalid.");
+                _logger.LogError("Source directory \"{source}\" is invalid.", source);
             }
             else if (!Directory.Exists(target)) 
             {
-                _logger.LogError($"Target directory \"{target}\" is invalid.");
+                _logger.LogError("Target directory \"{target}\" is invalid.", target);
             }
             else
             {
@@ -46,11 +46,11 @@ namespace APIDocGenerator
                 try
                 {
                     _viewModel.GenerateDocument();
-                    _logger.LogInformation($"\"{name}.docx\" created successfully at {DateTime.Now:u}.");
+                    _logger.LogInformation("\"{name}.docx\" created successfully at {datetime}.", name, DateTime.Now.ToString("u"));
                 } 
                 catch(Exception ex)
                 {
-                    _logger.LogError($"Command line run failed to generate document: {ex}");
+                    _logger.LogError("Command line run failed to generate document: {ex}", ex);
                 }
             } 
 
@@ -77,7 +77,7 @@ namespace APIDocGenerator
                 await DisplayAlert("Success", $"{_viewModel.FileName}.docx created.", "Ok");
             } catch (Exception ex)
             {
-                _logger.LogError($"{ex}");
+                _logger.LogError("{ex}", ex);
                 await DisplayAlert("Error", $"Document creation failed: {ex.Message}.", "Ok");
             }
         }
