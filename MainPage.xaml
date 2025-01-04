@@ -60,7 +60,7 @@
 
                 <Entry x:Name="destinationFolder"
                Text="{Binding SelectedDestination}"
-               Placeholder="Enter destination folder path"
+               Placeholder="Enter document file destination folder"
                Completed="DestinationFolderPathCompletedEvent"
                Style="{StaticResource entryStyle}"/>
             </HorizontalStackLayout>

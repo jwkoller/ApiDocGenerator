@@ -30,9 +30,11 @@ namespace APIDocGenerator
             string target = _commandLineArgs[2];
             string name = _commandLineArgs[3];
 
-            if (!Directory.Exists(source))
+            bool sourceIsJsonFile = source.LastIndexOf(".json") >= 0;
+
+            if ((sourceIsJsonFile && !File.Exists(source)) || (!sourceIsJsonFile && !Directory.Exists(source)))
             {
-                _logger.LogError("Source directory \"{source}\" is invalid.", source);
+                _logger.LogError("Source file or directory \"{source}\" is invalid.", source);
             }
             else if (!Directory.Exists(target)) 
             {

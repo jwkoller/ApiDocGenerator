@@ -10,6 +10,7 @@ namespace APIDocGenerator.ViewModels
     {
         private readonly ILogger<MainViewModel> _logger;
         private readonly IFolderPicker _folderPicker;
+        private readonly IFilePicker _filePicker;
         private readonly TextParserService _parserService;
 
         [ObservableProperty]
@@ -19,10 +20,11 @@ namespace APIDocGenerator.ViewModels
         [ObservableProperty]
         private string _fileName = string.Empty;
 
-        public MainViewModel(ILogger<MainViewModel> logger, IFolderPicker folderPicker, TextParserService parserService)
+        public MainViewModel(ILogger<MainViewModel> logger, IFolderPicker folderPicker, IFilePicker filePicker, TextParserService parserService)
         {
             _logger = logger;
             _folderPicker = folderPicker;
+            _filePicker = filePicker;
             _parserService = parserService;
         }
 
