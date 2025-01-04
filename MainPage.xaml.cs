@@ -24,7 +24,7 @@ namespace APIDocGenerator
             _logger = logger;
         }
 
-        private void RunCommandLineArgs()
+        private async void RunCommandLineArgs()
         {
             string source = _commandLineArgs[1];
             string target = _commandLineArgs[2];
@@ -46,7 +46,7 @@ namespace APIDocGenerator
 
                 try
                 {
-                    _viewModel.GenerateDocument();
+                    await _viewModel.GenerateDocument();
                     _logger.LogInformation("\"{name}.docx\" created successfully at {datetime}.", name, DateTime.Now.ToString("u"));
                 } 
                 catch(Exception ex)
