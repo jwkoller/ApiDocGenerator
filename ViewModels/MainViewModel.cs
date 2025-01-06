@@ -19,6 +19,14 @@ namespace APIDocGenerator.ViewModels
         private string _selectedDestination = string.Empty;
         [ObservableProperty]
         private string _fileName = string.Empty;
+        [ObservableProperty]
+        private bool _jsonFileSelectionIsVisible = true;
+        [ObservableProperty]
+        private bool _folderSelectionIsVisible = false;
+        [ObservableProperty]
+        private bool _useJsonFileIsOn = true;
+        [ObservableProperty]
+        private bool _useControllersIsOn = false;
 
         public MainViewModel(ILogger<MainViewModel> logger, IFolderPicker folderPicker, IFilePicker filePicker, TextParserService parserService)
         {
@@ -52,6 +60,23 @@ namespace APIDocGenerator.ViewModels
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        [RelayCommand]
+        public async Task SelectJsonSourceFile(CancellationToken token)
+        {
+            IDictionary<DevicePlatform, IEnumerable<string>> fileTypes = new Dictionary<DevicePlatform, IEnumerable<string>> { { DevicePlatform.WinUI, [".json"] } };
+            FileResult? result = await _filePicker.PickAsync(new PickOptions { FileTypes = new FilePickerFileType(fileTypes) });
+
+            if(result != null)
+            {
+                SelectedSource = result.FullPath;
+            }
+        }
+
+        /// <summary>
         /// Gets user selected destination folder for the output file.
         /// </summary>
         /// <param name="token"></param>
@@ -75,6 +100,16 @@ namespace APIDocGenerator.ViewModels
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public void SwapSourceSelectionOption()
+        {
+            JsonFileSelectionIsVisible = UseJsonFileIsOn;
+            FolderSelectionIsVisible = !UseJsonFileIsOn;
+            SelectedSource = string.Empty;
+        }
+
+        /// <summary>
         /// Generates and outputs the finalized document.
         /// </summary>
         /// <returns></returns>
@@ -83,7 +118,8 @@ namespace APIDocGenerator.ViewModels
             if (string.IsNullOrWhiteSpace(FileName))
             {
                 throw new Exception("File name must be set");
-            } else
+            } 
+            else
             {
                 if (FileName.Contains(".docx"))
                 {
@@ -103,7 +139,7 @@ namespace APIDocGenerator.ViewModels
 
             if (string.IsNullOrWhiteSpace(SelectedSource))
             {
-                throw new Exception("Controller source folder must be set");
+                throw new Exception("Source must be set");
             }
 
             IEnumerable<FileInfo> sourceFiles = FileReaderService.GetFiles(SelectedSource);

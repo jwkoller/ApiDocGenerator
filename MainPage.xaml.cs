@@ -66,6 +66,12 @@ namespace APIDocGenerator
             _viewModel.SelectedSource = path;
         }
 
+        private void SourceJsonFilePathCompletedEvent(object sender, EventArgs e)
+        {
+            string path = (((Entry)sender).Text);
+            _viewModel.SelectedSource = path;
+        }
+
         private void DestinationFolderPathCompletedEvent(object sender, EventArgs e)
         {
             string path = ((Entry)sender).Text;
@@ -89,6 +95,11 @@ namespace APIDocGenerator
         {
             string fileName = ((Entry)sender).Text;
             _viewModel.FileName = fileName;
+        }
+
+        private void OnSourceTypeRadioButtonChanged(object sender, CheckedChangedEventArgs e)
+        {
+            _viewModel.SwapSourceSelectionOption();
         }
     }
 
