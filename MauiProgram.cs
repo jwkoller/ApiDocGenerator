@@ -25,9 +25,6 @@ namespace APIDocGenerator
             builder.Services.AddSingleton<IFolderPicker>(FolderPicker.Default);
             builder.Services.AddSingleton<IFilePicker>(FilePicker.Default);
 
-            builder.Services.AddScoped<FileReaderService>();
-            builder.Services.AddScoped<TextParserService>();
-
             builder.Logging.AddStreamingFileLogger(options =>
             {
                 options.FolderPath = $"{AppDomain.CurrentDomain.BaseDirectory}\\__Logs";

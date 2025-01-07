@@ -3,20 +3,32 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using Color = DocumentFormat.OpenXml.Wordprocessing.Color;
 using FontSize = DocumentFormat.OpenXml.Wordprocessing.FontSize;
 using DocumentFormat.OpenXml;
+using Microsoft.Maui.Storage;
+using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 
 namespace APIDocGenerator.Services
 {
     public class DocumentGenerator
     {
+        private string _destinationFolder;
         public string DocumentName { get; private set; }
         public WordprocessingDocument Document { get; private set; }
         public MainDocumentPart MainPart {  get; private set; }
         public Body Body { get; private set; }
-
+       
         public DocumentGenerator(string destination, string fileName)
         {
+            _destinationFolder = destination;
             DocumentName = fileName;
-            Document = WordprocessingDocument.Create($"{destination}/{fileName}.docx", WordprocessingDocumentType.Document);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void CreateBlankDocument()
+        {
+            Document = WordprocessingDocument.Create($"{_destinationFolder}{Path.DirectorySeparatorChar}{DocumentName}.docx", WordprocessingDocumentType.Document);
             MainPart = Document.AddMainDocumentPart();
             MainPart.Document = new Document();
             Body = MainPart.Document.AppendChild(new Body());
@@ -159,6 +171,88 @@ namespace APIDocGenerator.Services
             run.AppendChild(new Text() { Text = headerText });
             run.AppendChild(new Break());
             paragraph.AppendChild(run);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sourceFiles"></param>
+        /// <returns></returns>
+        public Task GenerateFromControllerFiles(IEnumerable<FileInfo> sourceFiles)
+        {
+            CreateBlankDocument();
+            AddTitleLine(DocumentName);
+
+            foreach (FileInfo file in sourceFiles)
+            {
+                string controllerName = file.Name[..file.Name.IndexOf(".cs")];
+                string controllerRouting = controllerName.Replace("Controller", "").ToLower();
+                IEnumerable<string> fileLines = FileReaderService.GetValidFileLines(file.FullName);
+
+
+                string versionString = TextParserService.GetVersionInfo(fileLines);
+                string? routeLine = fileLines.FirstOrDefault(x => x.Contains("Route("));
+
+                // if the controller has no routing info, probably a base or abstract for inheritance
+                if (routeLine != default)
+                {
+                    string parsedControllerRoute = routeLine.Split('"')[1]
+                        .Replace("[controller]", controllerRouting)
+                        .Replace("v{v:apiVersion}", $"{{{versionString}}}");
+
+                    if (!parsedControllerRoute.Contains("api"))
+                    {
+                        parsedControllerRoute = $"api/{parsedControllerRoute}";
+                    }
+
+                    string paragraphHeader = $"{controllerName} {versionString}";
+                    WriteNewParagraph(paragraphHeader);
+
+                    List<string> endpointLines = TextParserService.GetLinesAtFirstEndpoint(fileLines).ToList();
+
+                    for (int i = 0; i < endpointLines.Count; i++)
+                    {
+                        string copy = endpointLines[i];
+                        if (copy.StartsWith("[Http"))
+                        {
+                            var (type, endpoint) = TextParserService.GetEndPointRouting(copy);
+                            string outPut = $"{parsedControllerRoute}{endpoint}";
+                            WriteRouteLine(type, outPut);
+                        }
+
+                        if (copy.StartsWith("///"))
+                        {
+                            var (lastIdx, output) = TextParserService.GetParsedXMLString(endpointLines, i);
+                            i = lastIdx; // skip past other lines in same comment section
+                            WriteCommentLine(output);
+                        }
+                    }
+                }
+            }
+
+            Save();
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Task GenerateFromJson(JObject json)
+        {
+            CreateBlankDocument();
+            AddTitleLine(DocumentName);
+
+            JToken? paths = json.GetValue("paths");
+            JToken? components = json.GetValue("components");
+            while (paths.CreateReader().Read())
+            {
+            }
+            if (paths != null)
+            {
+                foreach (var path in paths) { }
+            }
+            return Task.CompletedTask;
         }
 
         /// <summary>

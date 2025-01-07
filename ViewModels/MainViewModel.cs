@@ -3,6 +3,9 @@ using CommunityToolkit.Maui.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Windows.Data.Json;
 
 namespace APIDocGenerator.ViewModels
 {
@@ -11,7 +14,6 @@ namespace APIDocGenerator.ViewModels
         private readonly ILogger<MainViewModel> _logger;
         private readonly IFolderPicker _folderPicker;
         private readonly IFilePicker _filePicker;
-        private readonly TextParserService _parserService;
 
         [ObservableProperty]
         private string _selectedSource = string.Empty;
@@ -28,12 +30,11 @@ namespace APIDocGenerator.ViewModels
         [ObservableProperty]
         private bool _useControllersIsOn = false;
 
-        public MainViewModel(ILogger<MainViewModel> logger, IFolderPicker folderPicker, IFilePicker filePicker, TextParserService parserService)
+        public MainViewModel(ILogger<MainViewModel> logger, IFolderPicker folderPicker, IFilePicker filePicker)
         {
             _logger = logger;
             _folderPicker = folderPicker;
             _filePicker = filePicker;
-            _parserService = parserService;
         }
 
         /// <summary>
@@ -113,7 +114,7 @@ namespace APIDocGenerator.ViewModels
         /// Generates and outputs the finalized document.
         /// </summary>
         /// <returns></returns>
-        public Task GenerateDocument()
+        public async Task GenerateDocument()
         {
             if (string.IsNullOrWhiteSpace(FileName))
             {
@@ -142,60 +143,19 @@ namespace APIDocGenerator.ViewModels
                 throw new Exception("Source must be set");
             }
 
-            IEnumerable<FileInfo> sourceFiles = FileReaderService.GetFiles(SelectedSource);
             DocumentGenerator docGenerator = new DocumentGenerator(SelectedDestination, FileName);
 
-            docGenerator.AddTitleLine(FileName);
-
-            foreach(FileInfo file in sourceFiles)
+            if (UseControllersIsOn) 
             {
-                string controllerName = file.Name[..file.Name.IndexOf(".cs")];
-                string controllerRouting = controllerName.Replace("Controller", "").ToLower();
-                IEnumerable<string> fileLines = FileReaderService.GetValidFileLines(file.FullName);
-
-
-                string versionString = _parserService.GetVersionInfo(fileLines);
-                string? routeLine = fileLines.FirstOrDefault(x => x.Contains("Route("));
-
-                // if the controller has no routing info, probably a base or abstract for inheritance
-                if(routeLine != default)
-                {
-                    string parsedControllerRoute = routeLine.Split('"')[1]
-                        .Replace("[controller]", controllerRouting)
-                        .Replace("v{v:apiVersion}", $"{{{versionString}}}");
-
-                    if (!parsedControllerRoute.Contains("api"))
-                    {
-                        parsedControllerRoute = $"api/{parsedControllerRoute}";
-                    }
-
-                    string paragraphHeader = $"{controllerName} {versionString}";
-                    docGenerator.WriteNewParagraph(paragraphHeader);
-
-                    List<string> endpointLines = _parserService.GetLinesAtFirstEndpoint(fileLines).ToList();
-
-                    for (int i = 0; i < endpointLines.Count; i++)
-                    {
-                        string copy = endpointLines[i];
-                        if (copy.StartsWith("[Http"))
-                        {
-                            var (type, endpoint) = _parserService.GetEndPointRouting(copy);
-                            string outPut = $"{parsedControllerRoute}{endpoint}";
-                            docGenerator.WriteRouteLine(type, outPut);
-                        }
-
-                        if (copy.StartsWith("///"))
-                        {
-                            var (lastIdx, output) = _parserService.GetParsedXMLString(endpointLines, i);
-                            i = lastIdx; // skip past other lines in same comment section
-                            docGenerator.WriteCommentLine(output);
-                        }
-                    }
-                }       
+                IEnumerable<FileInfo> sourceFiles = FileReaderService.GetFiles(SelectedSource);
+                await docGenerator.GenerateFromControllerFiles(sourceFiles);
             }
-
-            docGenerator.Save();
-            return Task.CompletedTask;
+            else
+            {
+                string jsonContent = await File.ReadAllTextAsync(SelectedSource);
+                JObject jsonParse = JObject.Parse(jsonContent);
+                await docGenerator.GenerateFromJson(jsonParse);
+            }
         }
     }
 }

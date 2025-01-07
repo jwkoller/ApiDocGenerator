@@ -3,7 +3,7 @@ using System.Text;
 
 namespace APIDocGenerator.Services
 {
-    public class FileReaderService
+    public static class FileReaderService
     {
         /// <summary>
         /// Returns list of .cs files in provided directory.
