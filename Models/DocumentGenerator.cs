@@ -242,24 +242,20 @@ namespace APIDocGenerator.Services
         /// <returns></returns>
         public Task GenerateFromJson(string json)
         {
-            try
+            RootApiJson? apiRoot = JsonConvert.DeserializeObject<RootApiJson>(json);
+
+            if (apiRoot == null)
             {
-                RootApiJson? apiRoot = JsonConvert.DeserializeObject<RootApiJson>(json);
-
-                if (apiRoot != null)
-                {
-                    throw new Exception("Error encountered parsing the JSON file.");
-                }
-
-                CreateBlankDocument();
-                AddTitleLine(DocumentName);
-            }
-            catch (Exception ex) 
-            { 
-                
+                throw new Exception("Error encountered parsing the JSON file.");
             }
 
+            CreateBlankDocument();
+            string version = !string.IsNullOrEmpty(apiRoot.Info?.Version) ? $" v{apiRoot.Info.Version}" : string.Empty;
+            AddTitleLine($"{DocumentName}{version}");
 
+
+
+            Save();
             return Task.CompletedTask;
         }
 

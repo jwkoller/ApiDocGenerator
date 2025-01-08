@@ -3,9 +3,6 @@ using CommunityToolkit.Maui.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Windows.Data.Json;
 
 namespace APIDocGenerator.ViewModels
 {
@@ -26,9 +23,7 @@ namespace APIDocGenerator.ViewModels
         [ObservableProperty]
         private bool _folderSelectionIsVisible = false;
         [ObservableProperty]
-        private bool _useJsonFileIsOn = true;
-        [ObservableProperty]
-        private bool _useControllersIsOn = false;
+        private bool _useJsonFile = true;
 
         public MainViewModel(ILogger<MainViewModel> logger, IFolderPicker folderPicker, IFilePicker filePicker)
         {
@@ -105,8 +100,8 @@ namespace APIDocGenerator.ViewModels
         /// </summary>
         public void SwapSourceSelectionOption()
         {
-            JsonFileSelectionIsVisible = UseJsonFileIsOn;
-            FolderSelectionIsVisible = !UseJsonFileIsOn;
+            JsonFileSelectionIsVisible = UseJsonFile;
+            FolderSelectionIsVisible = !UseJsonFile;
             SelectedSource = string.Empty;
         }
 
@@ -145,7 +140,7 @@ namespace APIDocGenerator.ViewModels
 
             DocumentGenerator docGenerator = new DocumentGenerator(SelectedDestination, FileName);
 
-            if (UseControllersIsOn) 
+            if (!UseJsonFile) 
             {
                 IEnumerable<FileInfo> sourceFiles = FileReaderService.GetFiles(SelectedSource);
                 await docGenerator.GenerateFromControllerFiles(sourceFiles);

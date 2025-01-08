@@ -42,7 +42,7 @@
                 <RadioButton Content="Use Swagger generated json file" 
                              TextColor="#E8B00F" 
                              HorizontalOptions="Center" 
-                             IsChecked="{Binding UseJsonFileIsOn}"
+                             IsChecked="{Binding UseJsonFile}"
                              CheckedChanged="OnSourceTypeRadioButtonChanged"/>
                 <RadioButton Content="Use Controller files" 
                              TextColor="#E8B00F" 

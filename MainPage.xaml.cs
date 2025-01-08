@@ -13,15 +13,17 @@ namespace APIDocGenerator
         {
             _viewModel = viewModel;
             _commandLineArgs = Environment.GetCommandLineArgs();
+            _logger = logger;
+
             if (_commandLineArgs.Length == 4)
             {
                 RunCommandLineArgs();
             }
-
-            InitializeComponent();
-            BindingContext = viewModel;
-
-            _logger = logger;
+            else
+            {
+                InitializeComponent();
+                BindingContext = viewModel;
+            }
         }
 
         private async void RunCommandLineArgs()
@@ -45,6 +47,7 @@ namespace APIDocGenerator
                 _viewModel.SelectedSource = source;
                 _viewModel.SelectedDestination = target;
                 _viewModel.FileName = name;
+                _viewModel.UseJsonFile = sourceIsJsonFile;
 
                 try
                 {
