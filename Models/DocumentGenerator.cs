@@ -244,10 +244,8 @@ namespace APIDocGenerator.Services
             AddTitleLine(DocumentName);
 
             JToken? paths = json.GetValue("paths");
-            JToken? components = json.GetValue("components");
-            while (paths.CreateReader().Read())
-            {
-            }
+            JToken? schemas = json.GetValue("components")?;
+
             if (paths != null)
             {
                 foreach (var path in paths) { }
