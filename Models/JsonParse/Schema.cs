@@ -9,5 +9,7 @@
         public string Format { get; set; }
         public bool Nullable { get; set; }
         public bool ReadOnly { get; set; }
+        public Dictionary<string, Schema> Properties { get; set; }
+        public bool AdditionalProperties { get; set; }
     }
 }

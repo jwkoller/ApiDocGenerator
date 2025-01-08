@@ -153,8 +153,7 @@ namespace APIDocGenerator.ViewModels
             else
             {
                 string jsonContent = await File.ReadAllTextAsync(SelectedSource);
-                JObject jsonParse = JObject.Parse(jsonContent);
-                await docGenerator.GenerateFromJson(jsonParse);
+                await docGenerator.GenerateFromJson(jsonContent);
             }
         }
     }

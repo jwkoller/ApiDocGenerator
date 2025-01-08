@@ -4,6 +4,6 @@
     {
         public int ResponseCode { get; set; }
         public string Description { get; set; }
-        public IEnumerable<Content> Content { get; set; }
+        public Dictionary<string, Content> Content { get; set; }
     }
 }

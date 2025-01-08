@@ -6,6 +6,8 @@ using DocumentFormat.OpenXml;
 using Microsoft.Maui.Storage;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
+using APIDocGenerator.Models.JsonParse;
+using Newtonsoft.Json;
 
 namespace APIDocGenerator.Services
 {
@@ -28,7 +30,7 @@ namespace APIDocGenerator.Services
         /// </summary>
         private void CreateBlankDocument()
         {
-            Document = WordprocessingDocument.Create($"{_destinationFolder}{Path.DirectorySeparatorChar}{DocumentName}.docx", WordprocessingDocumentType.Document);
+            Document = WordprocessingDocument.Create($"{_destinationFolder}{System.IO.Path.DirectorySeparatorChar}{DocumentName}.docx", WordprocessingDocumentType.Document);
             MainPart = Document.AddMainDocumentPart();
             MainPart.Document = new Document();
             Body = MainPart.Document.AppendChild(new Body());
@@ -238,18 +240,26 @@ namespace APIDocGenerator.Services
         /// 
         /// </summary>
         /// <returns></returns>
-        public Task GenerateFromJson(JObject json)
+        public Task GenerateFromJson(string json)
         {
-            CreateBlankDocument();
-            AddTitleLine(DocumentName);
-
-            JToken? paths = json.GetValue("paths");
-            JToken? schemas = json.GetValue("components")?;
-
-            if (paths != null)
+            try
             {
-                foreach (var path in paths) { }
+                RootApiJson? apiRoot = JsonConvert.DeserializeObject<RootApiJson>(json);
+
+                if (apiRoot != null)
+                {
+                    throw new Exception("Error encountered parsing the JSON file.");
+                }
+
+                CreateBlankDocument();
+                AddTitleLine(DocumentName);
             }
+            catch (Exception ex) 
+            { 
+                
+            }
+
+
             return Task.CompletedTask;
         }
 
