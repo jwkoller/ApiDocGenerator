@@ -1,6 +1,6 @@
 ﻿namespace APIDocGenerator.Models.JsonParse
 {
-    public class Path
+    public class Route
     {
         public RequestType? Get {  get; set; }
         public RequestType? Post { get; set; }

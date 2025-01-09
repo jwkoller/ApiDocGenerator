@@ -8,6 +8,8 @@ using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using APIDocGenerator.Models.JsonParse;
 using Newtonsoft.Json;
+using DocumentFormat.OpenXml.Bibliography;
+using System.Speech.Synthesis;
 
 namespace APIDocGenerator.Services
 {
@@ -252,11 +254,171 @@ namespace APIDocGenerator.Services
             CreateBlankDocument();
             string version = !string.IsNullOrEmpty(apiRoot.Info?.Version) ? $" v{apiRoot.Info.Version}" : string.Empty;
             AddTitleLine($"{DocumentName}{version}");
+            Dictionary<string, List<Paragraph>> controllerSections = [];
 
+            foreach (KeyValuePair<string, Route> path in apiRoot.Paths) 
+            { 
+                string uriPath = path.Key;
+                string controllerName = string.Empty;
 
+                Paragraph routeHeader = CreateNewRouteSection(uriPath);
+
+                Route routeDetails = path.Value;
+
+                if(routeDetails.Get != null)
+                {
+                    Paragraph get = CreateNewRequestTypeSection("GET", routeDetails.Get);
+                    routeHeader.AppendChild(get);
+
+                    controllerName = routeDetails.Get.Tags.First();           
+                }
+
+                if (routeDetails.Put != null) 
+                {
+                    Paragraph put = CreateNewRequestTypeSection("PUT", routeDetails.Put);
+                    routeHeader.AppendChild(put);
+
+                    controllerName = routeDetails.Put.Tags.First();
+                }
+
+                if (routeDetails.Post != null)
+                {
+                    Paragraph post = CreateNewRequestTypeSection("POST", routeDetails.Post);
+                    routeHeader.AppendChild(post);
+
+                    controllerName = routeDetails.Post.Tags.First();
+                }
+
+                if (routeDetails.Delete != null)
+                {
+                    Paragraph delete = CreateNewRequestTypeSection("DELETE", routeDetails.Delete);
+                    routeHeader.AppendChild(delete);
+
+                    controllerName = routeDetails.Delete.Tags.First();
+                }
+
+                if (!controllerSections.TryGetValue(controllerName, out List<Paragraph>? value)) 
+                {
+                    value = new List<Paragraph>();
+                    controllerSections.Add(controllerName, value);
+                }
+
+                value.Add(routeHeader);
+            }
+
+            BuildDocument(controllerSections);
 
             Save();
             return Task.CompletedTask;
+        }
+
+        private static Paragraph CreateNewRouteSection(string path)
+        {
+            Paragraph paragraph = new Paragraph();
+            Run run = new Run();
+            RunProperties props = new RunProperties();
+            props.Bold = new Bold();
+            props.FontSize = new FontSize() { Val = "32" };
+
+            run.Append(props);
+            run.AppendChild(new Break());
+            run.AppendChild(new Text() { Text = path, Space = SpaceProcessingModeValues.Preserve });
+            run.AppendChild(new Break());
+            paragraph.AppendChild(run);
+
+            return paragraph;
+        }
+
+        private static Paragraph CreateNewRequestTypeSection(string type, RequestType details)
+        {
+            Paragraph paragraph = new Paragraph();
+            Run run = paragraph.AppendChild(new Run());
+            RunProperties props = new RunProperties();
+            props.FontSize = new FontSize() { Val = "24" };
+            props.Bold = new Bold();
+
+            switch (type)
+            {
+                case "GET":
+                    props.Color = new Color() { Val = "15a612" };
+                    break;
+                case "POST":
+                    props.Color = new Color() { Val = "467be3" };
+                    break;
+                case "PUT":
+                    props.Color = new Color() { Val = "e0da1d" };
+                    break;
+                case "DELETE":
+                    props.Color = new Color() { Val = "e03614" };
+                    break;
+            }
+
+            run.Append(props);
+            run.AppendChild(new Text() { Text = $"{type}: ", Space = SpaceProcessingModeValues.Preserve });
+
+            Run next = paragraph.AppendChild(new Run());
+            RunProperties nextProps = new RunProperties();
+            nextProps.Bold = new Bold();
+            nextProps.FontSize = new FontSize() { Val = "24" };
+
+            next.Append(nextProps);
+            next.AppendChild(new Text() { Text = $"{details.Summary}", Space = SpaceProcessingModeValues.Preserve });
+            next.AppendChild(new Break());
+
+            return paragraph;
+        }
+
+        private static Paragraph CreateNewParamSection(Parameter param)
+        {
+            Paragraph paragraph = new Paragraph();
+            Run run = paragraph.AppendChild(new Run());
+            RunProperties props = new RunProperties();
+            props.FontSize = new FontSize() { Val = "24" };
+            props.Bold = new Bold();
+
+            return paragraph;
+        }
+
+
+        private static Paragraph CreateNewControllerHeading(string controllerName)
+        {
+            Paragraph paragraph = new Paragraph();
+            if (!paragraph.Elements<ParagraphProperties>().Any())
+            {
+                paragraph.PrependChild(new ParagraphProperties());
+            }
+
+            Justification centered = new Justification() { Val = JustificationValues.Center };
+            paragraph.ParagraphProperties?.Append(centered);
+
+            Run run = new Run();
+            RunProperties props = new RunProperties();
+            props.Bold = new Bold();
+            props.FontSize = new FontSize() { Val = "40" };
+
+            string headingText = $"{controllerName} Controller Routes";
+            run.Append(props);
+            run.AppendChild(new Break());
+            run.AppendChild(new Text() { Text = controllerName });
+            run.AppendChild(new Break());
+            paragraph.AppendChild(run);
+
+            return paragraph;
+        }
+
+
+        private void BuildDocument(Dictionary<string, List<Paragraph>> paragraphs)
+        {
+            foreach (KeyValuePair<string, List<Paragraph>> items in paragraphs) 
+            {
+                Paragraph heading = CreateNewControllerHeading(items.Key);
+                Body.AppendChild(heading);
+
+                foreach (Paragraph paragraph in items.Value) 
+                {
+                    Body.AppendChild(paragraph);
+                }               
+            }           
         }
 
         /// <summary>
