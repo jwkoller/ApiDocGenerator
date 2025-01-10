@@ -1,21 +1,23 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+﻿using APIDocGenerator.Models.JsonParse;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Newtonsoft.Json;
 using Color = DocumentFormat.OpenXml.Wordprocessing.Color;
 using FontSize = DocumentFormat.OpenXml.Wordprocessing.FontSize;
-using DocumentFormat.OpenXml;
-using Microsoft.Maui.Storage;
-using System.Diagnostics;
-using Newtonsoft.Json.Linq;
-using APIDocGenerator.Models.JsonParse;
-using Newtonsoft.Json;
-using DocumentFormat.OpenXml.Bibliography;
-using System.Speech.Synthesis;
 
 namespace APIDocGenerator.Services
 {
     public class DocumentGenerator
     {
+        private const string TITLE_FONT_SIZE = "40";
+        private const string HEADING_FONT_SIZE = "32";
+        private const string TEXT_FONT_SIZE = "24";
+        private const string JSON_FONT_SIZE = "18";
+
         private string _destinationFolder;
+        private Components _jsonComponents;
+
         public string DocumentName { get; private set; }
         public WordprocessingDocument Document { get; private set; }
         public MainDocumentPart MainPart {  get; private set; }
@@ -53,7 +55,7 @@ namespace APIDocGenerator.Services
             Run run = new Run();
             RunProperties props = new RunProperties();
             props.Bold = new Bold();
-            props.FontSize = new FontSize() { Val = "32"};
+            props.FontSize = new FontSize() { Val = HEADING_FONT_SIZE};
             
             run.Append(props);
             run.AppendChild(new Break());
@@ -71,7 +73,7 @@ namespace APIDocGenerator.Services
             Paragraph last = Body.Elements<Paragraph>().Last();         
             Run run = last.AppendChild(new Run());
             RunProperties props = new RunProperties();
-            props.FontSize = new FontSize() { Val = "24" };
+            props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
 
             run.AppendChild(props);
             run.AppendChild(new Break());
@@ -94,14 +96,14 @@ namespace APIDocGenerator.Services
             {
                 Run run = last.AppendChild(new Run());
                 RunProperties props = new RunProperties();
-                props.FontSize = new FontSize() { Val = "24" };
+                props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
                 props.Bold = new Bold();
                 run.AppendChild(props);
                 run.AppendChild(new Text() { Text = line.Key, Space = SpaceProcessingModeValues.Preserve });
 
                 Run next = last.AppendChild(new Run());
                 RunProperties nextProps = new RunProperties();
-                props.FontSize = new FontSize() { Val = "24" };
+                props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
                 next.AppendChild(nextProps);
                 next.AppendChild(new Text() { Text = line.Value, Space = SpaceProcessingModeValues.Preserve });
                 next.AppendChild(new Break());
@@ -118,7 +120,7 @@ namespace APIDocGenerator.Services
             Paragraph last = Body.Elements<Paragraph>().Last();
             Run run = last.AppendChild(new Run());
             RunProperties props = new RunProperties();
-            props.FontSize = new FontSize() { Val = "24" };
+            props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
             props.Bold = new Bold();
 
             switch (type)
@@ -143,7 +145,7 @@ namespace APIDocGenerator.Services
             Run next = last.AppendChild(new Run());
             RunProperties nextProps = new RunProperties();
             nextProps.Bold = new Bold();
-            nextProps.FontSize = new FontSize() { Val = "24" };
+            nextProps.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
 
             next.Append(nextProps);
             next.AppendChild(new Text() { Text = $"/{text}", Space = SpaceProcessingModeValues.Preserve });
@@ -168,7 +170,7 @@ namespace APIDocGenerator.Services
             Run run = new Run();
             RunProperties props = new RunProperties();
             props.Bold = new Bold();
-            props.FontSize = new FontSize() { Val = "40" };
+            props.FontSize = new FontSize() { Val = TITLE_FONT_SIZE };
 
             run.Append(props);
             run.AppendChild(new Break());
@@ -243,13 +245,14 @@ namespace APIDocGenerator.Services
         /// </summary>
         /// <returns></returns>
         public Task GenerateFromJson(string json)
-        {
+        {   
             RootApiJson? apiRoot = JsonConvert.DeserializeObject<RootApiJson>(json);
 
             if (apiRoot == null)
             {
                 throw new Exception("Error encountered parsing the JSON file.");
             }
+            _jsonComponents = apiRoot.Components;
 
             CreateBlankDocument();
             string version = !string.IsNullOrEmpty(apiRoot.Info?.Version) ? $" v{apiRoot.Info.Version}" : string.Empty;
@@ -318,10 +321,9 @@ namespace APIDocGenerator.Services
             Run run = new Run();
             RunProperties props = new RunProperties();
             props.Bold = new Bold();
-            props.FontSize = new FontSize() { Val = "32" };
+            props.FontSize = new FontSize() { Val = HEADING_FONT_SIZE };
 
             run.Append(props);
-            run.AppendChild(new Break());
             run.AppendChild(new Text() { Text = path, Space = SpaceProcessingModeValues.Preserve });
             run.AppendChild(new Break());
             paragraph.AppendChild(run);
@@ -334,7 +336,7 @@ namespace APIDocGenerator.Services
             Paragraph paragraph = new Paragraph();
             Run run = paragraph.AppendChild(new Run());
             RunProperties props = new RunProperties();
-            props.FontSize = new FontSize() { Val = "24" };
+            props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
             props.Bold = new Bold();
 
             switch (type)
@@ -359,11 +361,10 @@ namespace APIDocGenerator.Services
             Run next = paragraph.AppendChild(new Run());
             RunProperties nextProps = new RunProperties();
             nextProps.Bold = new Bold();
-            nextProps.FontSize = new FontSize() { Val = "24" };
+            nextProps.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
 
             next.Append(nextProps);
             next.AppendChild(new Text() { Text = $"{details.Summary}", Space = SpaceProcessingModeValues.Preserve });
-            next.AppendChild(new Break());
 
             return paragraph;
         }
@@ -373,7 +374,7 @@ namespace APIDocGenerator.Services
             Paragraph paragraph = new Paragraph();
             Run run = paragraph.AppendChild(new Run());
             RunProperties props = new RunProperties();
-            props.FontSize = new FontSize() { Val = "24" };
+            props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
             props.Bold = new Bold();
 
             return paragraph;
@@ -394,12 +395,12 @@ namespace APIDocGenerator.Services
             Run run = new Run();
             RunProperties props = new RunProperties();
             props.Bold = new Bold();
-            props.FontSize = new FontSize() { Val = "40" };
+            props.FontSize = new FontSize() { Val = TITLE_FONT_SIZE };
 
-            string headingText = $"{controllerName} Controller Routes";
+            string headingText = $"{controllerName} Endpoints";
             run.Append(props);
             run.AppendChild(new Break());
-            run.AppendChild(new Text() { Text = controllerName });
+            run.AppendChild(new Text() { Text = headingText });
             run.AppendChild(new Break());
             paragraph.AppendChild(run);
 

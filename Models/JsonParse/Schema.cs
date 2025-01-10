@@ -1,4 +1,6 @@
-﻿namespace APIDocGenerator.Models.JsonParse
+﻿using Newtonsoft.Json;
+
+namespace APIDocGenerator.Models.JsonParse
 {
     public class Schema
     {
@@ -10,6 +12,7 @@
         public bool Nullable { get; set; }
         public bool ReadOnly { get; set; }
         public Dictionary<string, Schema> Properties { get; set; }
-        public bool AdditionalProperties { get; set; }
+        [JsonProperty(PropertyName = "$ref")]
+        public string Ref { get; set; }
     }
 }
