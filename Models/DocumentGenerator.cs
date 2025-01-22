@@ -1,10 +1,12 @@
 ﻿using APIDocGenerator.Models.JsonParse;
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Office.CustomUI;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Newtonsoft.Json;
 using Color = DocumentFormat.OpenXml.Wordprocessing.Color;
 using FontSize = DocumentFormat.OpenXml.Wordprocessing.FontSize;
+using Tab = DocumentFormat.OpenXml.Office.CustomUI.Tab;
 
 namespace APIDocGenerator.Services
 {
@@ -13,7 +15,7 @@ namespace APIDocGenerator.Services
         private const string TITLE_FONT_SIZE = "40";
         private const string HEADING_FONT_SIZE = "32";
         private const string TEXT_FONT_SIZE = "24";
-        private const string JSON_FONT_SIZE = "18";
+        private const string JSON_FONT_SIZE = "20";
 
         private string _destinationFolder;
         private Components _jsonComponents;
@@ -34,7 +36,7 @@ namespace APIDocGenerator.Services
         /// </summary>
         private void CreateBlankDocument()
         {
-            Document = WordprocessingDocument.Create($"{_destinationFolder}{System.IO.Path.DirectorySeparatorChar}{DocumentName}.docx", WordprocessingDocumentType.Document);
+            Document = WordprocessingDocument.Create($"{_destinationFolder}{Path.DirectorySeparatorChar}{DocumentName}.docx", WordprocessingDocumentType.Document);
             MainPart = Document.AddMainDocumentPart();
             MainPart.Document = new Document();
             Body = MainPart.Document.AppendChild(new Body());
@@ -309,7 +311,7 @@ namespace APIDocGenerator.Services
                 value.Add(routeHeader);
             }
 
-            BuildDocument(controllerSections);
+            CompileDocument(controllerSections);
 
             Save();
             return Task.CompletedTask;
@@ -333,6 +335,8 @@ namespace APIDocGenerator.Services
 
         private static Paragraph CreateNewRequestTypeSection(string type, RequestType details)
         {
+
+
             Paragraph paragraph = new Paragraph();
             Run run = paragraph.AppendChild(new Run());
             RunProperties props = new RunProperties();
@@ -357,25 +361,110 @@ namespace APIDocGenerator.Services
 
             run.Append(props);
             run.AppendChild(new Text() { Text = $"{type}: ", Space = SpaceProcessingModeValues.Preserve });
+            if (!string.IsNullOrEmpty(details.Summary))
+            {
+                Run next = paragraph.AppendChild(new Run());
+                RunProperties nextProps = new RunProperties();
+                nextProps.FontSize = new FontSize { Val = TEXT_FONT_SIZE };
+                next.Append(nextProps);
+                next.AppendChild(new Text() { Text = $"{details.Summary}", Space = SpaceProcessingModeValues.Preserve });
+                next.AppendChild(new Break());
+            }
+            else
+            {
+                run.AppendChild(new Break());
+            }
 
-            Run next = paragraph.AppendChild(new Run());
-            RunProperties nextProps = new RunProperties();
-            nextProps.Bold = new Bold();
-            nextProps.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
+            if(details.Parameters != null)
+            {
+                Run parameters = paragraph.AppendChild(new Run());
+                RunProperties paramProperties = new RunProperties();
+                paramProperties.Bold = new Bold();
+                paramProperties.FontSize = new FontSize { Val = TEXT_FONT_SIZE };
+                parameters.Append(paramProperties);
+                parameters.AppendChild(new Text { Text = "PARAMS", Space = SpaceProcessingModeValues.Preserve });
+                parameters.AppendChild(new Break());
 
-            next.Append(nextProps);
-            next.AppendChild(new Text() { Text = $"{details.Summary}", Space = SpaceProcessingModeValues.Preserve });
+                foreach (Parameter param in details.Parameters)
+                {
+                    paragraph.AppendChild(CreateNewParamSection(param));
+                }
+            }
 
             return paragraph;
         }
 
         private static Paragraph CreateNewParamSection(Parameter param)
-        {
+        {          
             Paragraph paragraph = new Paragraph();
-            Run run = paragraph.AppendChild(new Run());
-            RunProperties props = new RunProperties();
-            props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
-            props.Bold = new Bold();
+
+            Run name = paragraph.AppendChild(new Run());
+            RunProperties nameProps = new RunProperties
+            {
+                Bold = new Bold(),
+                FontSize = new FontSize { Val = JSON_FONT_SIZE }
+            };
+            name.Append(nameProps);
+            name.AppendChild(new TabChar());
+            name.AppendChild(new Text { Text = $"{param.Name} : ", Space = SpaceProcessingModeValues.Preserve });
+
+            Run valueType = paragraph.AppendChild(new Run());
+            RunProperties typeProps = new RunProperties
+            {
+                FontSize = new FontSize { Val = JSON_FONT_SIZE }
+            };
+            valueType.Append(typeProps);
+            valueType.AppendChild(new Text { Text = param.Schema.Type, Space = SpaceProcessingModeValues.Preserve });
+            valueType.AppendChild(new Break());
+
+            if (!string.IsNullOrEmpty(param.Description))
+            {
+                Run summary = paragraph.AppendChild(new Run());
+                RunProperties summaryProps = new RunProperties
+                {
+                    FontSize = new FontSize { Val = JSON_FONT_SIZE }
+                };
+                summary.Append(summaryProps);
+                summary.AppendChild(new TabChar());
+                summary.AppendChild(new TabChar());
+                summary.AppendChild(new Text { Text = param.Description, Space = SpaceProcessingModeValues.Preserve });
+                summary.AppendChild(new Break());
+            }
+            
+            Run locationKey = paragraph.AppendChild(new Run());
+            RunProperties keyProps = new RunProperties
+            {
+                Bold = new Bold(),
+                FontSize = new FontSize { Val = JSON_FONT_SIZE }
+            };
+            locationKey.Append(keyProps);
+            locationKey.AppendChild(new TabChar());
+            locationKey.AppendChild(new TabChar());
+            locationKey.AppendChild(new Text { Text = "In: ", Space = SpaceProcessingModeValues.Preserve });
+
+            Run locationValue = paragraph.AppendChild(new Run());
+            RunProperties locValueProps = new RunProperties
+            {
+                FontSize = new FontSize { Val = JSON_FONT_SIZE }
+            };
+            locationValue.Append(locValueProps);
+            locationValue.AppendChild(new Text { Text = param.In, Space = SpaceProcessingModeValues.Preserve });
+            locationValue.AppendChild(new Break());
+
+            if (param.Required)
+            {
+                Run required = paragraph.AppendChild(new Run());
+                RunProperties reqProps = new RunProperties
+                {
+                    Bold = new Bold(),
+                    FontSize = new FontSize { Val = JSON_FONT_SIZE }
+                };
+                required.Append(reqProps);
+                required.AppendChild(new TabChar());
+                required.AppendChild(new TabChar());
+                required.AppendChild(new Text { Text = "Required", Space = SpaceProcessingModeValues.Preserve });
+                required.AppendChild(new Break());
+            }
 
             return paragraph;
         }
@@ -408,7 +497,7 @@ namespace APIDocGenerator.Services
         }
 
 
-        private void BuildDocument(Dictionary<string, List<Paragraph>> paragraphs)
+        private void CompileDocument(Dictionary<string, List<Paragraph>> paragraphs)
         {
             foreach (KeyValuePair<string, List<Paragraph>> items in paragraphs) 
             {
