@@ -449,10 +449,10 @@ namespace APIDocGenerator.Services
             };
             locationValue.Append(locValueProps);
             locationValue.AppendChild(new Text { Text = param.In, Space = SpaceProcessingModeValues.Preserve });
-            locationValue.AppendChild(new Break());
 
             if (param.Required)
             {
+                locationValue.AppendChild(new Break());
                 Run required = paragraph.AppendChild(new Run());
                 RunProperties reqProps = new RunProperties
                 {
@@ -463,7 +463,6 @@ namespace APIDocGenerator.Services
                 required.AppendChild(new TabChar());
                 required.AppendChild(new TabChar());
                 required.AppendChild(new Text { Text = "Required", Space = SpaceProcessingModeValues.Preserve });
-                required.AppendChild(new Break());
             }
 
             return paragraph;
@@ -488,7 +487,6 @@ namespace APIDocGenerator.Services
 
             string headingText = $"{controllerName} Endpoints";
             run.Append(props);
-            run.AppendChild(new Break());
             run.AppendChild(new Text() { Text = headingText });
             run.AppendChild(new Break());
             paragraph.AppendChild(run);
