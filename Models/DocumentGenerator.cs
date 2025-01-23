@@ -1,13 +1,11 @@
 ﻿using APIDocGenerator.Models.JsonParse;
 using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Office.CustomUI;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Schema;
 using Color = DocumentFormat.OpenXml.Wordprocessing.Color;
 using FontSize = DocumentFormat.OpenXml.Wordprocessing.FontSize;
-using Tab = DocumentFormat.OpenXml.Office.CustomUI.Tab;
+using Format = APIDocGenerator.Services.FormattingService;
 
 namespace APIDocGenerator.Services
 {
@@ -410,13 +408,7 @@ namespace APIDocGenerator.Services
         {
             Paragraph paragraph = new Paragraph();
             Run paramSection = paragraph.AppendChild(new Run());
-            RunProperties paramProperties = new RunProperties
-            {
-                Bold = new Bold(),
-                FontSize = new FontSize { Val = TEXT_FONT_SIZE }
-            };
-            paramSection.Append(paramProperties);
-            paramSection.AppendChild(new Text { Text = "PARAMS", Space = SpaceProcessingModeValues.Preserve });
+            paramSection.AppendChild(Format.CreateBoldTextLine("Parameters", TEXT_FONT_SIZE));
             paramSection.AppendChild(new Break());
 
             foreach (Parameter param in parameters)
@@ -434,73 +426,34 @@ namespace APIDocGenerator.Services
         private static Paragraph CreateNewParameter(Parameter param)
         {          
             Paragraph paragraph = new Paragraph();
+            Run container = paragraph.AppendChild(new Run());
+            container.AppendChild(new TabChar());
 
-            Run name = paragraph.AppendChild(new Run());
-            RunProperties nameProps = new RunProperties
-            {
-                Bold = new Bold(),
-                FontSize = new FontSize { Val = JSON_FONT_SIZE }
-            };
-            name.Append(nameProps);
-            name.AppendChild(new TabChar());
-            name.AppendChild(new Text { Text = $"{param.Name} : ", Space = SpaceProcessingModeValues.Preserve });
-
-            Run valueType = paragraph.AppendChild(new Run());
-            RunProperties typeProps = new RunProperties
-            {
-                FontSize = new FontSize { Val = JSON_FONT_SIZE }
-            };
-            valueType.Append(typeProps);
             string typeText = string.IsNullOrEmpty(param.Schema.Format) ? param.Schema.Type : param.Schema.Format;
-            valueType.AppendChild(new Text { Text = typeText, Space = SpaceProcessingModeValues.Preserve });
-            valueType.AppendChild(new Break());
+            container.AppendChild(Format.CreateLabelValuePair(param.Name, typeText, JSON_FONT_SIZE));
+            container.AppendChild(new Break());
 
             if (!string.IsNullOrEmpty(param.Description))
             {
-                Run summary = paragraph.AppendChild(new Run());
-                RunProperties summaryProps = new RunProperties
-                {
-                    FontSize = new FontSize { Val = JSON_FONT_SIZE }
-                };
-                summary.Append(summaryProps);
+                Run summary = container.AppendChild(new Run());
                 summary.AppendChild(new TabChar());
                 summary.AppendChild(new TabChar());
-                summary.AppendChild(new Text { Text = param.Description, Space = SpaceProcessingModeValues.Preserve });
+                summary.AppendChild(Format.CreateTextLine(param.Description, JSON_FONT_SIZE));
                 summary.AppendChild(new Break());
             }
             
-            Run locationKey = paragraph.AppendChild(new Run());
-            RunProperties keyProps = new RunProperties
-            {
-                Bold = new Bold(),
-                FontSize = new FontSize { Val = JSON_FONT_SIZE }
-            };
-            locationKey.Append(keyProps);
-            locationKey.AppendChild(new TabChar());
-            locationKey.AppendChild(new TabChar());
-            locationKey.AppendChild(new Text { Text = "In: ", Space = SpaceProcessingModeValues.Preserve });
-
-            Run locationValue = paragraph.AppendChild(new Run());
-            RunProperties locValueProps = new RunProperties
-            {
-                FontSize = new FontSize { Val = JSON_FONT_SIZE }
-            };
-            locationValue.Append(locValueProps);
-            locationValue.AppendChild(new Text { Text = param.In, Space = SpaceProcessingModeValues.Preserve });
+            Run locationRun = container.AppendChild(new Run());
+            locationRun.AppendChild(new TabChar());
+            locationRun.AppendChild(new TabChar());
+            locationRun.AppendChild(Format.CreateLabelValuePair("In: ", param.In, JSON_FONT_SIZE));
 
             if (param.Required)
             {
-                locationValue.AppendChild(new Break());
-                Run required = paragraph.AppendChild(new Run());
-                RunProperties reqProps = new RunProperties
-                {
-                    Bold = new Bold(),
-                    FontSize = new FontSize { Val = JSON_FONT_SIZE }
-                };
-                required.Append(reqProps);
+                locationRun.AppendChild(new Break());
+                Run required = container.AppendChild(new Run());
                 required.AppendChild(new TabChar());
                 required.AppendChild(new TabChar());
-                required.AppendChild(new Text { Text = "Required", Space = SpaceProcessingModeValues.Preserve });
+                required.AppendChild(Format.CreateBoldTextLine("Required", JSON_FONT_SIZE));
             }
 
             return paragraph;
@@ -521,7 +474,7 @@ namespace APIDocGenerator.Services
                 FontSize = new FontSize { Val = TEXT_FONT_SIZE }
             };
             reqBody.Append(reqBodyProps);
-            reqBody.AppendChild(new Text { Text = "REQUEST BODY", Space = SpaceProcessingModeValues.Preserve });
+            reqBody.AppendChild(new Text { Text = "Request Body", Space = SpaceProcessingModeValues.Preserve });
             reqBody.AppendChild(new Break());
 
             if (!string.IsNullOrEmpty(body.Description))
@@ -563,7 +516,7 @@ namespace APIDocGenerator.Services
                 };
                 content.AppendChild(new TabChar());
                 content.AppendChild(new TabChar());
-                content.AppendChild(GetFormattedSchema(jsonSchema));
+                content.AppendChild(CreateFormattedSchema(jsonSchema));
 
 
                 //foreach(KeyValuePair<string,Schema> objProps in jsonSchema.Properties)
@@ -626,7 +579,7 @@ namespace APIDocGenerator.Services
             return paragraph;
         }
 
-        private Paragraph GetFormattedSchema(Schema schemaToFormat)
+        private Paragraph CreateFormattedSchema(Schema schemaToFormat, string name = "")
         {
             Schema schema = schemaToFormat;
             if (!string.IsNullOrEmpty(schema.Ref))
@@ -634,9 +587,13 @@ namespace APIDocGenerator.Services
                 schema = GetSchemaComponent(schema.Ref);
             }
 
-            Paragraph paragraph = new Paragraph();
+            string schemaName = string.IsNullOrEmpty(name) ? schema.Name : name;
 
-            if(schema.Type == "object")
+
+            Paragraph paragraph = new Paragraph();
+            paragraph.AppendChild(Format.CreateLabelValuePair(schemaName, schema.Type, JSON_FONT_SIZE));
+
+            if (schema.Type == "object")
             {
                 foreach (KeyValuePair<string, Schema> objProps in schema.Properties)
                 {
@@ -646,18 +603,18 @@ namespace APIDocGenerator.Services
                     if (!string.IsNullOrEmpty(propSchema.Ref))
                     {
                         propSchema = GetSchemaComponent(propSchema.Ref);
-                        paragraph.AppendChild(GetFormattedSchema(propSchema));
+                        paragraph.AppendChild(CreateFormattedSchema(propSchema));
 
                     } else
                     {
-                        Run name = paragraph.AppendChild(new Run());
+                        Run nameText = paragraph.AppendChild(new Run());
                         RunProperties nameProps = new RunProperties
                         {
                             Bold = new Bold(),
                             FontSize = new FontSize { Val = JSON_FONT_SIZE }
                         };
-                        name.Append(nameProps);
-                        name.AppendChild(new Text { Text = $"{propName}: ", Space = SpaceProcessingModeValues.Preserve });
+                        nameText.Append(nameProps);
+                        nameText.AppendChild(new Text { Text = $"{propName}: ", Space = SpaceProcessingModeValues.Preserve });
 
                         Run val = paragraph.AppendChild(new Run());
                         RunProperties valProps = new RunProperties
@@ -688,7 +645,7 @@ namespace APIDocGenerator.Services
                             };
                             items.Append(itemsProp);
                             items.AppendChild(new TabChar());
-                            items.AppendChild(GetFormattedSchema(propSchema.Items));
+                            items.AppendChild(CreateFormattedSchema(propSchema.Items));
                         }
                     }
                 }
