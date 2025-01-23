@@ -386,6 +386,11 @@ namespace APIDocGenerator.Services
                 container.AppendChild(CreateNewRequestBodySection(details.RequestBody));
             }
 
+            if (details.Responses != null)
+            {
+
+            }
+
 
 
             return container;
@@ -507,17 +512,11 @@ namespace APIDocGenerator.Services
             Justification centered = new Justification() { Val = JustificationValues.Center };
             paragraph.ParagraphProperties?.Append(centered);
 
-            Run run = new Run();
-            RunProperties props = new RunProperties();
-            props.Bold = new Bold();
-            props.FontSize = new FontSize() { Val = TITLE_FONT_SIZE };
-
+            Run run = paragraph.AppendChild(new Run());
             string headingText = $"{controllerName} Endpoints";
-            run.Append(props);
-            run.AppendChild(new Text() { Text = headingText });
-            run.AppendChild(new Break());
-            paragraph.AppendChild(run);
-
+            run.AppendChild(Format.CreateBoldTextLine(headingText, TITLE_FONT_SIZE));
+            run.AppendChild(new CarriageReturn());
+            
             return paragraph;
         }
 
