@@ -388,7 +388,7 @@ namespace APIDocGenerator.Services
 
             if (details.Responses != null)
             {
-
+                container.AppendChild(CreateNewResponseSection(details.Responses));
             }
 
 
@@ -496,6 +496,14 @@ namespace APIDocGenerator.Services
             return container;
         }
 
+        private Run CreateNewResponseSection(Dictionary<string, Response> responses)
+        {
+            Run container = new Run();
+
+
+            return container;
+        }
+
         /// <summary>
         /// Creates a heading for a controller that will contain the various available endpoints.
         /// </summary>
@@ -574,12 +582,22 @@ namespace APIDocGenerator.Services
 
                         if (propSchema.Items != null)
                         {
-                            for (int i = 0; i < numTabs; i++)
+                            for (int i = 0; i < numTabs + 1; i++)
                             {
                                 propertyRun.AppendChild(new TabChar());
                             }
-                            propertyRun.AppendChild(new TabChar());
-                            string valueText = !string.IsNullOrEmpty(propSchema.Items.Ref) ? "object" : string.IsNullOrEmpty(propSchema.Format) ? propSchema.Type : propSchema.Format;
+
+                            if (!string.IsNullOrEmpty(propSchema.Items.Description))
+                            {
+                                propertyRun.AppendChild(Format.CreateTextLine(propSchema.Items.Description, JSON_FONT_SIZE));
+                                propertyRun.AppendChild(new CarriageReturn());
+                                for (int i = 0; i < numTabs + 1; i++)
+                                {
+                                    propertyRun.AppendChild(new TabChar());
+                                }
+                            }
+
+                            string valueText = !string.IsNullOrEmpty(propSchema.Items.Ref) ? "object" : string.IsNullOrEmpty(propSchema.Items.Format) ? propSchema.Items.Type : propSchema.Items.Format;
                             propertyRun.AppendChild(Format.CreateLabelValuePair("Items: ", valueText, JSON_FONT_SIZE));
                             propertyRun.AppendChild(new CarriageReturn());
                             
