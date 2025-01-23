@@ -499,7 +499,28 @@ namespace APIDocGenerator.Services
         private Run CreateNewResponseSection(Dictionary<string, Response> responses)
         {
             Run container = new Run();
+            Run responseRun = container.AppendChild(new Run());
+            responseRun.AppendChild(Format.CreateBoldTextLine("Responses", TEXT_FONT_SIZE));
+            responseRun.AppendChild(new CarriageReturn());
 
+            foreach(KeyValuePair<string, Response> response in responses)
+            {
+                string code = response.Key;
+                Response responseValue = response.Value;
+                Run run = container.AppendChild(new Run());
+                run.AppendChild(new TabChar());
+                run.AppendChild(Format.CreateLabelValuePair($"{code}: ", responseValue.Description, JSON_FONT_SIZE));
+                run.AppendChild(new CarriageReturn());
+
+                if (responseValue.Content != null && responseValue.Content.TryGetValue("application/json", out Content? appJsonContent)) 
+                {
+                    run.AppendChild(new TabChar());
+                    run.AppendChild(Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE));
+                    run.AppendChild(new CarriageReturn());
+
+                    run.AppendChild(CreateFormattedSchema(appJsonContent.Schema, 2));
+                }
+            }
 
             return container;
         }
@@ -545,7 +566,6 @@ namespace APIDocGenerator.Services
 
             Run container = new Run();
 
-            // pretty much always going to be true, since even arrays are wrapped in brackets
             if (schema.Type == "object")
             {
                 foreach (KeyValuePair<string, Schema> objProps in schema.Properties)
@@ -567,8 +587,7 @@ namespace APIDocGenerator.Services
 
                     } else
                     {
-                        string typeText = string.IsNullOrEmpty(propSchema.Format) ? propSchema.Type : propSchema.Format;
-                        propertyRun.AppendChild(Format.CreateLabelValuePair($"{propName}: ", typeText, JSON_FONT_SIZE));
+                        propertyRun.AppendChild(Format.CreateLabelValuePair($"{propName}: ", propSchema.DisplayTypeText, JSON_FONT_SIZE));
                         propertyRun.AppendChild(new CarriageReturn());
                         if (!string.IsNullOrEmpty(propSchema.Description))
                         {
@@ -582,29 +601,89 @@ namespace APIDocGenerator.Services
 
                         if (propSchema.Items != null)
                         {
-                            for (int i = 0; i < numTabs + 1; i++)
-                            {
-                                propertyRun.AppendChild(new TabChar());
-                            }
+                            propertyRun.AppendChild(CreateFormattedSchema(propSchema, numTabs + 1));
+                            //for (int i = 0; i < numTabs + 1; i++)
+                            //{
+                            //    propertyRun.AppendChild(new TabChar());
+                            //}
 
-                            if (!string.IsNullOrEmpty(propSchema.Items.Description))
-                            {
-                                propertyRun.AppendChild(Format.CreateTextLine(propSchema.Items.Description, JSON_FONT_SIZE));
-                                propertyRun.AppendChild(new CarriageReturn());
-                                for (int i = 0; i < numTabs + 1; i++)
-                                {
-                                    propertyRun.AppendChild(new TabChar());
-                                }
-                            }
+                            //string valueText = !string.IsNullOrEmpty(propSchema.Items.Ref) ? "object" : string.IsNullOrEmpty(propSchema.Items.Format) ? propSchema.Items.Type : propSchema.Items.Format;
+                            //propertyRun.AppendChild(Format.CreateLabelValuePair("Array Content: ", valueText, JSON_FONT_SIZE));
+                            //propertyRun.AppendChild(new CarriageReturn());
 
-                            string valueText = !string.IsNullOrEmpty(propSchema.Items.Ref) ? "object" : string.IsNullOrEmpty(propSchema.Items.Format) ? propSchema.Items.Type : propSchema.Items.Format;
-                            propertyRun.AppendChild(Format.CreateLabelValuePair("Items: ", valueText, JSON_FONT_SIZE));
-                            propertyRun.AppendChild(new CarriageReturn());
-                            
-                            Run itemsRun = propertyRun.AppendChild(new Run());
-                            itemsRun.AppendChild(CreateFormattedSchema(propSchema.Items, numTabs+2));
+                            //if (!string.IsNullOrEmpty(propSchema.Items.Description))
+                            //{
+                            //    Paragraph desc = propertyRun.AppendChild(new Paragraph());
+
+                            //    for (int i = 0; i < numTabs + 1; i++)
+                            //    {
+                            //        desc.AppendChild(new TabChar());
+                            //    }
+                            //    desc.AppendChild(Format.CreateTextLine(propSchema.Items.Description, JSON_FONT_SIZE));
+                            //    propertyRun.AppendChild(new CarriageReturn());
+                            //}
+
+                            //if (valueText == "object")
+                            //{
+                            //    Run itemsRun = propertyRun.AppendChild(new Run());
+                            //    itemsRun.AppendChild(CreateFormattedSchema(propSchema.Items, numTabs + 2));
+                            //}
                         }
                     }
+                }
+            }
+            else if (schema.Type == "array")
+            {
+                Run arrayRun = container.AppendChild(new Run());
+
+                for (int i = 0; i < numTabs; i++)
+                {
+                    arrayRun.AppendChild(new TabChar());
+                }
+
+                string valueText = !string.IsNullOrEmpty(schema.Items.Ref) ? "object" : schema.Items.DisplayTypeText;
+                arrayRun.AppendChild(Format.CreateLabelValuePair("Array Content: ", valueText, JSON_FONT_SIZE));
+                arrayRun.AppendChild(new CarriageReturn());
+
+                if (!string.IsNullOrEmpty(schema.Description))
+                {
+                    Paragraph desc = arrayRun.AppendChild(new Paragraph());
+
+                    for (int i = 0; i < numTabs; i++)
+                    {
+                        desc.AppendChild(new TabChar());
+                    }
+                    desc.AppendChild(Format.CreateTextLine(schema.Description, JSON_FONT_SIZE));
+                    arrayRun.AppendChild(new CarriageReturn());
+                }
+
+                if (valueText == "object")
+                {
+                    Run itemsRun = arrayRun.AppendChild(new Run());
+                    itemsRun.AppendChild(CreateFormattedSchema(schema.Items, numTabs + 1));
+                }
+            }
+            else
+            {
+                Run itemRun = container.AppendChild(new Run());
+
+                for (int i = 0; i < numTabs; i++)
+                {
+                    itemRun.AppendChild(new TabChar());
+                }
+
+                itemRun.AppendChild(Format.CreateTextLine(schema.DisplayTypeText, JSON_FONT_SIZE));
+
+                if (!string.IsNullOrEmpty(schema.Description))
+                {
+                    itemRun.AppendChild(new CarriageReturn());
+                    Paragraph desc = itemRun.AppendChild(new Paragraph());
+
+                    for (int i = 0; i < numTabs; i++)
+                    {
+                        desc.AppendChild(new TabChar());
+                    }
+                    desc.AppendChild(Format.CreateTextLine(schema.Description, JSON_FONT_SIZE));
                 }
             }
 

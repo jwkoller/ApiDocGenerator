@@ -14,5 +14,7 @@ namespace APIDocGenerator.Models.JsonParse
         public Dictionary<string, Schema> Properties { get; set; }
         [JsonProperty(PropertyName = "$ref")]
         public string Ref { get; set; }
+        [JsonIgnore]
+        public string DisplayTypeText { get => string.IsNullOrEmpty(Format) ? Type : Format; }
     }
 }
