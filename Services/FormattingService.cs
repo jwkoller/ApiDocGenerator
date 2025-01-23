@@ -21,7 +21,7 @@ namespace APIDocGenerator.Services
                 FontSize = new FontSize { Val = fontSize }
             };
             labelRun.AppendChild(labelProps);
-            labelRun.AppendChild(new Text { Text = $"{label} : ", Space = SpaceProcessingModeValues.Preserve });
+            labelRun.AppendChild(new Text { Text = label, Space = SpaceProcessingModeValues.Preserve });
 
             Run valueRun = container.AppendChild(new Run());
             RunProperties valueProps = new RunProperties
