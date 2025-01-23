@@ -242,7 +242,7 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
-        /// 
+        /// Generates a new document from a Swagger generated JSON string.
         /// </summary>
         /// <returns></returns>
         public Task GenerateFromJson(string json)
@@ -392,7 +392,7 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
-        /// 
+        /// Create a new Parameter section for a HTTP request type.
         /// </summary>
         /// <returns></returns>
         private static Run CreateNewParameterSection(IEnumerable<Parameter> parameters)
@@ -451,7 +451,7 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
-        /// 
+        /// Creates a new HTTP POST request body section, including schema obj formatting.
         /// </summary>
         /// <param name="body"></param>
         /// <returns></returns>
@@ -522,7 +522,8 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
-        /// 
+        /// Creates a formatted section for a given schema, recursively drilling down to sub-properties. Number of tab indentations
+        /// is tracked so I don't have to mess with a bulleted list cause it's a giant pita in OpenXMl.
         /// </summary>
         /// <param name="schemaToFormat"></param>
         /// <param name="numTabs"></param>
@@ -537,6 +538,7 @@ namespace APIDocGenerator.Services
 
             Run container = new Run();
 
+            // pretty much always going to be true, since even arrays are wrapped in brackets
             if (schema.Type == "object")
             {
                 foreach (KeyValuePair<string, Schema> objProps in schema.Properties)
@@ -593,7 +595,7 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
-        /// 
+        /// Finds the requested json component from the reference string. This assumes a singular list of components.
         /// </summary>
         /// <param name="refString"></param>
         /// <returns></returns>
