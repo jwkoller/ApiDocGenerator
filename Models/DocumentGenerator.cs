@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 using Color = DocumentFormat.OpenXml.Wordprocessing.Color;
 using FontSize = DocumentFormat.OpenXml.Wordprocessing.FontSize;
 using Format = APIDocGenerator.Services.FormattingService;
@@ -18,6 +19,8 @@ namespace APIDocGenerator.Services
 
         private string _destinationFolder;
         private Components _jsonComponents;
+        private NumberingDefinitionsPart _numberingDefinitionsPart;
+        private Dictionary<string, Paragraph> _componentBulletLists;
 
         public string DocumentName { get; private set; }
         public WordprocessingDocument Document { get; private set; }
@@ -27,11 +30,12 @@ namespace APIDocGenerator.Services
         public DocumentGenerator(string destination, string fileName)
         {
             _destinationFolder = destination;
+            _componentBulletLists = new Dictionary<string, Paragraph>();
             DocumentName = fileName;
         }
 
         /// <summary>
-        /// 
+        /// Creates the blank document
         /// </summary>
         private void CreateBlankDocument()
         {
@@ -39,6 +43,161 @@ namespace APIDocGenerator.Services
             MainPart = Document.AddMainDocumentPart();
             MainPart.Document = new Document();
             Body = MainPart.Document.AppendChild(new Body());
+        }
+
+        /// <summary>
+        /// Creates bulleted lists out of any component schemas and adds them to the internal dictionary for use.
+        /// </summary>
+        private void CreateComponentBulletParagraphs()
+        {
+            if(MainPart.NumberingDefinitionsPart == null)
+            {
+                _numberingDefinitionsPart = MainPart.AddNewPart<NumberingDefinitionsPart>("NumberDefintionsPart01");
+                Numbering element = new Numbering();
+                element.Save(_numberingDefinitionsPart);
+            }
+
+            foreach(KeyValuePair<string, Schema> componentSchema in _jsonComponents.Schemas)
+            {
+                string componentName = componentSchema.Key;
+                Schema schema = componentSchema.Value;
+                if (!string.IsNullOrEmpty(schema.Ref))
+                {
+                    schema = GetSchemaComponent(schema.Ref);
+                }
+
+                int abstractId = _numberingDefinitionsPart.Numbering.Elements<AbstractNum>().Count() + 1;
+                Level abstractLevel = new Level(new NumberingFormat { Val = NumberFormatValues.None }, new LevelText { Val = "" }) { LevelIndex = 0 };
+                AbstractNum abstractNum = new AbstractNum(abstractLevel) { AbstractNumberId = abstractId };
+
+                if(abstractId == 1)
+                {
+                    _numberingDefinitionsPart.Numbering.Append(abstractNum);
+                } 
+                else
+                {
+                    AbstractNum last = _numberingDefinitionsPart.Numbering.Elements<AbstractNum>().Last();
+                    _numberingDefinitionsPart.Numbering.InsertAfter(abstractNum, last);
+                }
+
+                int numberId = _numberingDefinitionsPart.Numbering.Elements<NumberingInstance>().Count() + 1;
+                NumberingInstance numInstance = new NumberingInstance { NumberID = numberId };
+                AbstractNumId abstractNumId = new AbstractNumId { Val = abstractId };
+                numInstance.Append(abstractNumId);
+
+                if(numberId == 1)
+                {
+                    _numberingDefinitionsPart.Numbering.Append(numInstance);
+                }
+                else
+                {
+                    NumberingInstance last = _numberingDefinitionsPart.Numbering.Elements<NumberingInstance>().Last();
+                    _numberingDefinitionsPart.Numbering.InsertAfter(numInstance, last);
+                }
+
+                int startingIndent = 0;
+
+                Run formattedSchema = CreateSchemaFormattedBulletList(startingIndent, schema, numberId);
+                Paragraph componentContainer = new Paragraph();
+                componentContainer.AppendChild(formattedSchema);
+
+                _componentBulletLists.Add(componentName, componentContainer);
+            }
+        }
+
+        /// <summary>
+        /// Formats a single schema and it's properties into a bulleted list
+        /// </summary>
+        /// <param name="indent"></param>
+        /// <param name="schemaToFormat"></param>
+        /// <param name="bulletNumberId"></param>
+        /// <returns></returns>
+        private Run CreateSchemaFormattedBulletList(int indent, Schema schemaToFormat, int bulletNumberId)
+        {
+            Run container = new Run();
+
+            Schema schema = schemaToFormat;
+            if (!string.IsNullOrEmpty(schema.Ref))
+            {
+                schema = GetSchemaComponent(schema.Ref);
+            }
+
+            if(schema.Type == "object")
+            {
+                foreach (KeyValuePair<string, Schema> property in schema.Properties)
+                {
+                    Schema propSchema = property.Value;
+
+                    if (!string.IsNullOrEmpty(propSchema.Ref))
+                    {
+                        propSchema = GetSchemaComponent(propSchema.Ref);
+                        if(propSchema == schema)
+                        {
+                            Run propertyRun = Format.CreateLabelValuePair($"{property.Key}: ", "Same object as parent", JSON_FONT_SIZE);
+                            Paragraph propParagraph = Format.CreateBulletedListItem(bulletNumberId, indent, propertyRun);
+                            container.AppendChild(propParagraph);
+                        }
+                        else
+                        {
+                            Run itemsParagraph = CreateSchemaFormattedBulletList(indent + 1, propSchema, bulletNumberId);
+                            container.AppendChild(itemsParagraph);
+                        }
+                    } 
+                    else
+                    {
+                        Run propertyRun = Format.CreateLabelValuePair($"{property.Key}: ", propSchema.DisplayTypeText, JSON_FONT_SIZE);
+                        Paragraph propParagraph = Format.CreateBulletedListItem(bulletNumberId, indent, propertyRun);
+                        container.AppendChild(propParagraph);
+
+                        if (propSchema.Items != null)
+                        {
+                            Run itemsParagraph = CreateSchemaFormattedBulletList(indent + 1, propSchema.Items, bulletNumberId);
+                            container.AppendChild(itemsParagraph);
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrEmpty(propSchema.Description))
+                            {
+                                Run description = Format.CreateTextLine(propSchema.Description, JSON_FONT_SIZE);
+                                Paragraph descParagraph = Format.CreateBulletedListItem(bulletNumberId, indent + 1, description);
+                                container.AppendChild(descParagraph);
+                            }
+                        }
+                    }
+                }
+            }
+            else if (schema.Type == "array")
+            {
+                Run propertyRun = Format.CreateBoldTextLine($"Array", JSON_FONT_SIZE);
+                Paragraph propParagraph = Format.CreateBulletedListItem(bulletNumberId, indent, propertyRun);
+                container.AppendChild(propParagraph);
+
+                if (!string.IsNullOrEmpty(schema.Description))
+                {
+                    Run description = Format.CreateTextLine(schema.Description, JSON_FONT_SIZE);
+                    Paragraph descParagraph = Format.CreateBulletedListItem(bulletNumberId, indent + 1, description);
+                    container.AppendChild(descParagraph);
+                }
+
+                Run itemsParagraph = CreateSchemaFormattedBulletList(indent + 1, schema.Items, bulletNumberId);
+                container.AppendChild(itemsParagraph);
+            }
+            else
+            {
+                string label = string.IsNullOrEmpty(schema.Name) ? string.Empty : schema.Name;
+                Run run = Format.CreateLabelValuePair(label, schema.DisplayTypeText, JSON_FONT_SIZE);
+                Paragraph para = Format.CreateBulletedListItem(bulletNumberId, indent, run);
+                container.AppendChild(para);
+
+                if (!string.IsNullOrEmpty(schema.Description))
+                {
+                    Run description = Format.CreateTextLine(schema.Description, JSON_FONT_SIZE);
+                    Paragraph descParagraph = Format.CreateBulletedListItem(bulletNumberId, indent + 1, description);
+                    container.AppendChild(descParagraph);
+                }
+            }
+
+            return container;
         }
 
         /// <summary>
@@ -247,8 +406,11 @@ namespace APIDocGenerator.Services
         /// <returns></returns>
         public Task GenerateFromJson(string json)
         {
+            // remove carriage returns and dead spacing
+            string cleanedJson = Regex.Replace(json, @"((\\r\\n\s{2,})|(\\r\\n))", " ");
+            // ignore meta properties like $ref so we can capture and use them
             var settings = new JsonSerializerSettings { MetadataPropertyHandling = MetadataPropertyHandling.Ignore };
-            RootApiJson? apiRoot = JsonConvert.DeserializeObject<RootApiJson>(json, settings);
+            RootApiJson? apiRoot = JsonConvert.DeserializeObject<RootApiJson>(cleanedJson, settings);
 
             if (apiRoot == null)
             {
@@ -257,6 +419,8 @@ namespace APIDocGenerator.Services
             _jsonComponents = apiRoot.Components;
 
             CreateBlankDocument();
+            CreateComponentBulletParagraphs();
+
             string version = !string.IsNullOrEmpty(apiRoot.Info?.Version) ? $" v{apiRoot.Info.Version}" : string.Empty;
             AddTitleLine($"{DocumentName}{version}");
             Dictionary<string, List<Paragraph>> controllerSections = [];
@@ -693,6 +857,11 @@ namespace APIDocGenerator.Services
         /// <param name="paragraphs"></param>
         private void CompileDocument(Dictionary<string, List<Paragraph>> paragraphs)
         {
+            foreach(KeyValuePair<string, Paragraph> components in _componentBulletLists)
+            {
+                Body.AppendChild(components.Value);
+            }
+
             foreach (KeyValuePair<string, List<Paragraph>> items in paragraphs) 
             {
                 Paragraph heading = CreateNewControllerHeading(items.Key);

@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Wordprocessing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace APIDocGenerator.Services
 {
@@ -53,6 +54,21 @@ namespace APIDocGenerator.Services
             textRun.AppendChild(new Text { Text = text, Space = SpaceProcessingModeValues.Preserve });
 
             return textRun;
+        }
+
+        public static Paragraph CreateBulletedListItem(int numberingId, int indent, Run text)
+        {
+            int indentUnitSize = 240;
+            string indentValue = $"{indent * indentUnitSize}";
+
+            var propNumberProps = new NumberingProperties(new NumberingLevelReference { Val = 0 }, new NumberingId { Val = numberingId });
+            var propSpaceBetween = new SpacingBetweenLines { After = "0" };
+            var propIndentation = new Indentation { Left = indentValue };
+
+            Paragraph paragraph = new Paragraph(new ParagraphProperties(propNumberProps, propSpaceBetween, propIndentation));
+            paragraph.AppendChild(text);
+
+            return paragraph;
         }
     }
 }
