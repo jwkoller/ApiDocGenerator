@@ -46,6 +46,44 @@ namespace APIDocGenerator.Services
         }
 
         /// <summary>
+        /// Appends a new empty bulleted list to the main document and returns it's numbering id for use.
+        /// </summary>
+        /// <returns></returns>
+        private int CreateNewBulletedList()
+        {
+            int abstractId = _numberingDefinitionsPart.Numbering.Elements<AbstractNum>().Count() + 1;
+            Level abstractLevel = new Level(new NumberingFormat { Val = NumberFormatValues.None }, new LevelText { Val = "" }) { LevelIndex = 0 };
+            AbstractNum abstractNum = new AbstractNum(abstractLevel) { AbstractNumberId = abstractId };
+
+            if (abstractId == 1)
+            {
+                _numberingDefinitionsPart.Numbering.Append(abstractNum);
+            }
+            else
+            {
+                AbstractNum last = _numberingDefinitionsPart.Numbering.Elements<AbstractNum>().Last();
+                _numberingDefinitionsPart.Numbering.InsertAfter(abstractNum, last);
+            }
+
+            int numberId = _numberingDefinitionsPart.Numbering.Elements<NumberingInstance>().Count() + 1;
+            NumberingInstance numInstance = new NumberingInstance { NumberID = numberId };
+            AbstractNumId abstractNumId = new AbstractNumId { Val = abstractId };
+            numInstance.Append(abstractNumId);
+
+            if (numberId == 1)
+            {
+                _numberingDefinitionsPart.Numbering.Append(numInstance);
+            }
+            else
+            {
+                NumberingInstance last = _numberingDefinitionsPart.Numbering.Elements<NumberingInstance>().Last();
+                _numberingDefinitionsPart.Numbering.InsertAfter(numInstance, last);
+            }
+
+            return numberId;
+        }
+
+        /// <summary>
         /// Creates bulleted lists out of any component schemas and adds them to the internal dictionary for use.
         /// </summary>
         private void CreateComponentBulletParagraphs()
@@ -66,38 +104,11 @@ namespace APIDocGenerator.Services
                     schema = GetSchemaComponent(schema.Ref);
                 }
 
-                int abstractId = _numberingDefinitionsPart.Numbering.Elements<AbstractNum>().Count() + 1;
-                Level abstractLevel = new Level(new NumberingFormat { Val = NumberFormatValues.None }, new LevelText { Val = "" }) { LevelIndex = 0 };
-                AbstractNum abstractNum = new AbstractNum(abstractLevel) { AbstractNumberId = abstractId };
-
-                if(abstractId == 1)
-                {
-                    _numberingDefinitionsPart.Numbering.Append(abstractNum);
-                } 
-                else
-                {
-                    AbstractNum last = _numberingDefinitionsPart.Numbering.Elements<AbstractNum>().Last();
-                    _numberingDefinitionsPart.Numbering.InsertAfter(abstractNum, last);
-                }
-
-                int numberId = _numberingDefinitionsPart.Numbering.Elements<NumberingInstance>().Count() + 1;
-                NumberingInstance numInstance = new NumberingInstance { NumberID = numberId };
-                AbstractNumId abstractNumId = new AbstractNumId { Val = abstractId };
-                numInstance.Append(abstractNumId);
-
-                if(numberId == 1)
-                {
-                    _numberingDefinitionsPart.Numbering.Append(numInstance);
-                }
-                else
-                {
-                    NumberingInstance last = _numberingDefinitionsPart.Numbering.Elements<NumberingInstance>().Last();
-                    _numberingDefinitionsPart.Numbering.InsertAfter(numInstance, last);
-                }
+                int listNumberId = CreateNewBulletedList();
 
                 int startingIndent = 0;
 
-                Run formattedSchema = CreateSchemaFormattedBulletList(startingIndent, schema, numberId);
+                Run formattedSchema = CreateSchemaFormattedBulletList(startingIndent, schema, listNumberId);
                 Paragraph componentContainer = new Paragraph();
                 componentContainer.AppendChild(formattedSchema);
 
@@ -436,32 +447,32 @@ namespace APIDocGenerator.Services
 
                 if(routeDetails.Get != null)
                 {
-                    Run get = CreateNewRequestTypeSection("GET", routeDetails.Get);
-                    routeHeader.AppendChild(get);
+                    //Run get = CreateNewRequestTypeSection("GET", routeDetails.Get);
+                    routeHeader.AppendChild(CreateNewRequestTypeSection("GET", routeDetails.Get));
 
                     controllerName = routeDetails.Get.Tags.First();           
                 }
 
                 if (routeDetails.Put != null) 
                 {
-                    Run put = CreateNewRequestTypeSection("PUT", routeDetails.Put);
-                    routeHeader.AppendChild(put);
+                    //Run put = CreateNewRequestTypeSection("PUT", routeDetails.Put);
+                    routeHeader.AppendChild(CreateNewRequestTypeSection("PUT", routeDetails.Put));
 
                     controllerName = routeDetails.Put.Tags.First();
                 }
 
                 if (routeDetails.Post != null)
                 {
-                    Run post = CreateNewRequestTypeSection("POST", routeDetails.Post);
-                    routeHeader.AppendChild(post);
+                    //Run post = CreateNewRequestTypeSection("POST", routeDetails.Post);
+                    routeHeader.AppendChild(CreateNewRequestTypeSection("POST", routeDetails.Post));
 
                     controllerName = routeDetails.Post.Tags.First();
                 }
 
                 if (routeDetails.Delete != null)
                 {
-                    Run delete = CreateNewRequestTypeSection("DELETE", routeDetails.Delete);
-                    routeHeader.AppendChild(delete);
+                    //Run delete = CreateNewRequestTypeSection("DELETE", routeDetails.Delete);
+                    routeHeader.AppendChild(CreateNewRequestTypeSection("DELETE", routeDetails.Delete));
 
                     controllerName = routeDetails.Delete.Tags.First();
                 }
@@ -489,7 +500,7 @@ namespace APIDocGenerator.Services
         private static Paragraph CreateNewRouteSection(string path)
         {
             Paragraph paragraph = new Paragraph();
-            Run run =paragraph.AppendChild(new Run());
+            Run run = paragraph.AppendChild(new Run());
             run.AppendChild(Format.CreateBoldTextLine(path, HEADING_FONT_SIZE));
             run.AppendChild(new CarriageReturn());
 
@@ -503,9 +514,9 @@ namespace APIDocGenerator.Services
         /// <param name="type"></param>
         /// <param name="details"></param>
         /// <returns></returns>
-        private Run CreateNewRequestTypeSection(string type, RequestType details)
+        private Paragraph CreateNewRequestTypeSection(string type, RequestType details)
         {
-            Run container = new Run();
+            Paragraph container = new Paragraph();
             Run run = container.AppendChild(new Run());
             RunProperties props = new RunProperties();
             props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
@@ -564,9 +575,9 @@ namespace APIDocGenerator.Services
         /// Create a new Parameter section for a HTTP request type.
         /// </summary>
         /// <returns></returns>
-        private static Run CreateNewParameterSection(IEnumerable<Parameter> parameters)
+        private Paragraph CreateNewParameterSection(IEnumerable<Parameter> parameters)
         {
-            Run container = new Run();
+            Paragraph container = new Paragraph();
             Run paramSection = container.AppendChild(new Run());
             paramSection.AppendChild(Format.CreateBoldTextLine("Parameters", TEXT_FONT_SIZE));
             paramSection.AppendChild(new CarriageReturn());
@@ -583,40 +594,34 @@ namespace APIDocGenerator.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        private static Paragraph CreateNewParameter(Parameter param)
-        {          
-            Paragraph paragraph = new Paragraph();
-            Run container = paragraph.AppendChild(new Run());
-            container.AppendChild(new TabChar());
+        private Run CreateNewParameter(Parameter param)
+        {                    
+            Run container = new Run();
 
-            string typeText = string.IsNullOrEmpty(param.Schema.Format) ? param.Schema.Type : param.Schema.Format;
-            container.AppendChild(Format.CreateLabelValuePair($"{param.Name} : ", typeText, JSON_FONT_SIZE));
-            container.AppendChild(new Break());
+            int bulletId = CreateNewBulletedList();
+            Run typeRun = Format.CreateLabelValuePair($"{param.Name} : ", param.Schema.DisplayTypeText, JSON_FONT_SIZE);
+            Paragraph typeParagraph = Format.CreateBulletedListItem(bulletId, 1, typeRun);
+            container.AppendChild(typeParagraph);
 
             if (!string.IsNullOrEmpty(param.Description))
             {
-                Run summary = container.AppendChild(new Run());
-                summary.AppendChild(new TabChar());
-                summary.AppendChild(new TabChar());
-                summary.AppendChild(Format.CreateTextLine(param.Description, JSON_FONT_SIZE));
-                summary.AppendChild(new Break());
+                Run summary = Format.CreateTextLine(param.Description, JSON_FONT_SIZE);
+                Paragraph summaryParagraph = Format.CreateBulletedListItem(bulletId, 2, summary);
+                container.AppendChild(summaryParagraph);
             }
-            
-            Run locationRun = container.AppendChild(new Run());
-            locationRun.AppendChild(new TabChar());
-            locationRun.AppendChild(new TabChar());
-            locationRun.AppendChild(Format.CreateLabelValuePair("In: ", param.In, JSON_FONT_SIZE));
+
+            Run locationRun = Format.CreateLabelValuePair("In: ", param.In, JSON_FONT_SIZE);
+            Paragraph locationParagraph = Format.CreateBulletedListItem(bulletId, 2, locationRun);
+            container.AppendChild(locationParagraph);
 
             if (param.Required)
             {
-                locationRun.AppendChild(new Break());
-                Run required = container.AppendChild(new Run());
-                required.AppendChild(new TabChar());
-                required.AppendChild(new TabChar());
-                required.AppendChild(Format.CreateBoldTextLine("Required", JSON_FONT_SIZE));
+                Run required = Format.CreateBoldTextLine("Required", JSON_FONT_SIZE);
+                Paragraph reqParagraph = Format.CreateBulletedListItem(bulletId, 2, required);
+                container.AppendChild(reqParagraph);
             }
 
-            return paragraph;
+            return container;
         }
 
         /// <summary>
