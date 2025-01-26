@@ -4,14 +4,14 @@ using System.Xml.Linq;
 
 namespace APIDocGenerator.Services
 {
-    public class TextParserService
+    public static class TextParserService
     {
         /// <summary>
         /// Returns a concatenated string of versions controller is available for, based on [ApiVersion] attribute.
         /// </summary>
         /// <param name="lines"></param>
         /// <returns></returns>
-        public string GetVersionInfo(IEnumerable<string> lines) {
+        public static string GetVersionInfo(IEnumerable<string> lines) {
             IEnumerable<string> versions = lines.Where(x => x.StartsWith("[ApiVersion"));
             IEnumerable<string> parsedVersions = versions.Select(x => $"v{x.Substring(x.IndexOf('(') + 1, 1)}");
 
@@ -23,7 +23,7 @@ namespace APIDocGenerator.Services
         /// </summary>
         /// <param name="line"></param>
         /// <returns></returns>
-        public (string, string) GetEndPointRouting(string line)
+        public static (string, string) GetEndPointRouting(string line)
         {
             string parsed = new StringBuilder(line).Replace("[", "").Replace("]", "").Replace("(", "").Replace(")", "").ToString();
             string[] split = parsed.Split('"');
@@ -39,7 +39,7 @@ namespace APIDocGenerator.Services
         /// </summary>
         /// <param name="lines"></param>
         /// <returns></returns>
-        public IEnumerable<string> GetLinesAtFirstEndpoint(IEnumerable<string> lines)
+        public static IEnumerable<string> GetLinesAtFirstEndpoint(IEnumerable<string> lines)
         {
             List<string> listOfLines = lines.ToList();
             string firstHttp = listOfLines.First(x => x.StartsWith("[Http"));
@@ -64,7 +64,7 @@ namespace APIDocGenerator.Services
         /// <param name="lines"></param>
         /// <param name="currIdx"></param>
         /// <returns></returns>
-        public (int, List<KeyValuePair<string, string>>) GetParsedXMLString(List<string> lines, int currIdx)
+        public static (int, List<KeyValuePair<string, string>>) GetParsedXMLString(List<string> lines, int currIdx)
         {
             int lastIdx = 0;
             for(int i = currIdx + 1; i < lines.Count; i++)

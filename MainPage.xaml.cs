@@ -13,15 +13,17 @@ namespace APIDocGenerator
         {
             _viewModel = viewModel;
             _commandLineArgs = Environment.GetCommandLineArgs();
+            _logger = logger;
+
             if (_commandLineArgs.Length == 4)
             {
                 RunCommandLineArgs();
             }
-
-            InitializeComponent();
-            BindingContext = viewModel;
-
-            _logger = logger;
+            else
+            {
+                InitializeComponent();
+                BindingContext = viewModel;
+            }
         }
 
         private async void RunCommandLineArgs()
@@ -30,9 +32,11 @@ namespace APIDocGenerator
             string target = _commandLineArgs[2];
             string name = _commandLineArgs[3];
 
-            if (!Directory.Exists(source))
+            bool sourceIsJsonFile = source.LastIndexOf(".json") >= 0;
+
+            if ((sourceIsJsonFile && !File.Exists(source)) || (!sourceIsJsonFile && !Directory.Exists(source)))
             {
-                _logger.LogError("Source directory \"{source}\" is invalid.", source);
+                _logger.LogError("Source file or directory \"{source}\" is invalid.", source);
             }
             else if (!Directory.Exists(target)) 
             {
@@ -43,6 +47,7 @@ namespace APIDocGenerator
                 _viewModel.SelectedSource = source;
                 _viewModel.SelectedDestination = target;
                 _viewModel.FileName = name;
+                _viewModel.UseJsonFile = sourceIsJsonFile;
 
                 try
                 {
@@ -61,6 +66,12 @@ namespace APIDocGenerator
         private void SourceFolderPathCompletedEvent(object sender, EventArgs e)
         {
             string path = ((Entry)sender).Text;
+            _viewModel.SelectedSource = path;
+        }
+
+        private void SourceJsonFilePathCompletedEvent(object sender, EventArgs e)
+        {
+            string path = (((Entry)sender).Text);
             _viewModel.SelectedSource = path;
         }
 
@@ -87,6 +98,11 @@ namespace APIDocGenerator
         {
             string fileName = ((Entry)sender).Text;
             _viewModel.FileName = fileName;
+        }
+
+        private void OnSourceTypeRadioButtonChanged(object sender, CheckedChangedEventArgs e)
+        {
+            _viewModel.SwapSourceSelectionOption();
         }
     }
 

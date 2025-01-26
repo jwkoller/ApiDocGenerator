@@ -34,19 +34,44 @@
         <VerticalStackLayout
             Spacing="25"
             VerticalOptions="Center">
-            <Label  Text="Select folder for controllers and destination for document"
+            <Label  Text="Select your source and the destination folder for document"
                 TextColor="#E8B00F"
                 HorizontalOptions="Center"
                 SemanticProperties.HeadingLevel="Level1" />
+            <HorizontalStackLayout Spacing="30" HorizontalOptions="Center" >
+                <RadioButton Content="Use Swagger generated json file" 
+                             TextColor="#E8B00F" 
+                             HorizontalOptions="Center" 
+                             IsChecked="{Binding UseJsonFile}"
+                             CheckedChanged="OnSourceTypeRadioButtonChanged"/>
+                <RadioButton Content="Use Controller files" 
+                             TextColor="#E8B00F" 
+                             HorizontalOptions="Center"
+                             CheckedChanged="OnSourceTypeRadioButtonChanged"/>
+            </HorizontalStackLayout>
+            
             <HorizontalStackLayout HorizontalOptions="Center"
-                               Spacing="30">
+                               Spacing="30" IsVisible="{Binding JsonFileSelectionIsVisible}">
+                <Button Command="{Binding SelectJsonSourceFileCommand}"
+                Text="Select Source"
+                HorizontalOptions="Center"
+                Style="{StaticResource buttonStyle}"/>
+                <Entry x:Name="sourceFile"
+               Text="{Binding SelectedSource}"
+               Placeholder="Select .json file"
+               Completed="SourceJsonFilePathCompletedEvent"
+               Style="{StaticResource entryStyle}"/>
+            </HorizontalStackLayout>
+            
+            <HorizontalStackLayout HorizontalOptions="Center"
+                               Spacing="30" IsVisible="{Binding FolderSelectionIsVisible}">
                 <Button Command="{Binding SelectSourceFolderCommand}"
                 Text="Select Source"
                 HorizontalOptions="Center"
                 Style="{StaticResource buttonStyle}"/>
                 <Entry x:Name="sourceFolder"
                Text="{Binding SelectedSource}"
-               Placeholder="Enter source folder path"
+               Placeholder="Select controllers root folder"
                Completed="SourceFolderPathCompletedEvent"
                Style="{StaticResource entryStyle}"/>
             </HorizontalStackLayout>
@@ -60,7 +85,7 @@
 
                 <Entry x:Name="destinationFolder"
                Text="{Binding SelectedDestination}"
-               Placeholder="Enter destination folder path"
+               Placeholder="Enter document file destination folder"
                Completed="DestinationFolderPathCompletedEvent"
                Style="{StaticResource entryStyle}"/>
             </HorizontalStackLayout>

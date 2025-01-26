@@ -1,5 +1,4 @@
-﻿using APIDocGenerator.Services;
-using APIDocGenerator.ViewModels;
+﻿using APIDocGenerator.ViewModels;
 using CommunityToolkit.Maui;
 using CommunityToolkit.Maui.Storage;
 using MetroLog.MicrosoftExtensions;
@@ -23,9 +22,7 @@ namespace APIDocGenerator
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddSingleton<MainViewModel>();
             builder.Services.AddSingleton<IFolderPicker>(FolderPicker.Default);
-
-            builder.Services.AddScoped<FileReaderService>();
-            builder.Services.AddScoped<TextParserService>();
+            builder.Services.AddSingleton<IFilePicker>(FilePicker.Default);
 
             builder.Logging.AddStreamingFileLogger(options =>
             {
