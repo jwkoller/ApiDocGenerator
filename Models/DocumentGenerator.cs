@@ -20,7 +20,7 @@ namespace APIDocGenerator.Services
         private string _destinationFolder;
         private Components _jsonComponents;
         private NumberingDefinitionsPart _numberingDefinitionsPart;
-        private Dictionary<string, Paragraph> _componentBulletLists;
+        private Dictionary<string, OpenXmlElement> _componentBulletLists;
 
         public string DocumentName { get; private set; }
         public WordprocessingDocument Document { get; private set; }
@@ -30,7 +30,7 @@ namespace APIDocGenerator.Services
         public DocumentGenerator(string destination, string fileName)
         {
             _destinationFolder = destination;
-            _componentBulletLists = new Dictionary<string, Paragraph>();
+            _componentBulletLists = new Dictionary<string, OpenXmlElement>();
             DocumentName = fileName;
         }
 
@@ -434,56 +434,55 @@ namespace APIDocGenerator.Services
 
             string version = !string.IsNullOrEmpty(apiRoot.Info?.Version) ? $" v{apiRoot.Info.Version}" : string.Empty;
             AddTitleLine($"{DocumentName}{version}");
-            Dictionary<string, List<Paragraph>> controllerSections = [];
+            Dictionary<string, List<OpenXmlElement>> controllerSections = [];
 
             foreach (KeyValuePair<string, Route> path in apiRoot.Paths) 
             { 
                 string uriPath = path.Key;
                 string controllerName = string.Empty;
 
+                List<OpenXmlElement> elements = new List<OpenXmlElement>();
+
                 Paragraph routeHeader = CreateNewRouteSection(uriPath);
+                elements.Add(routeHeader);
 
                 Route routeDetails = path.Value;
 
                 if(routeDetails.Get != null)
                 {
-                    //Run get = CreateNewRequestTypeSection("GET", routeDetails.Get);
-                    routeHeader.AppendChild(CreateNewRequestTypeSection("GET", routeDetails.Get));
+                    elements.AddRange(CreateNewRequestTypeSection("GET", routeDetails.Get));
 
                     controllerName = routeDetails.Get.Tags.First();           
                 }
 
                 if (routeDetails.Put != null) 
                 {
-                    //Run put = CreateNewRequestTypeSection("PUT", routeDetails.Put);
-                    routeHeader.AppendChild(CreateNewRequestTypeSection("PUT", routeDetails.Put));
+                    elements.AddRange(CreateNewRequestTypeSection("PUT", routeDetails.Put));
 
                     controllerName = routeDetails.Put.Tags.First();
                 }
 
                 if (routeDetails.Post != null)
                 {
-                    //Run post = CreateNewRequestTypeSection("POST", routeDetails.Post);
-                    routeHeader.AppendChild(CreateNewRequestTypeSection("POST", routeDetails.Post));
+                    elements.AddRange(CreateNewRequestTypeSection("POST", routeDetails.Post));
 
                     controllerName = routeDetails.Post.Tags.First();
                 }
 
                 if (routeDetails.Delete != null)
                 {
-                    //Run delete = CreateNewRequestTypeSection("DELETE", routeDetails.Delete);
-                    routeHeader.AppendChild(CreateNewRequestTypeSection("DELETE", routeDetails.Delete));
+                    elements.AddRange(CreateNewRequestTypeSection("DELETE", routeDetails.Delete));
 
                     controllerName = routeDetails.Delete.Tags.First();
                 }
 
-                if (!controllerSections.TryGetValue(controllerName, out List<Paragraph>? value)) 
+                if (!controllerSections.TryGetValue(controllerName, out List<OpenXmlElement>? value)) 
                 {
-                    value = new List<Paragraph>();
+                    value = new List<OpenXmlElement>();
                     controllerSections.Add(controllerName, value);
                 }
 
-                value.Add(routeHeader);
+                value.AddRange(elements);
             }
 
             CompileDocument(controllerSections);
@@ -499,10 +498,11 @@ namespace APIDocGenerator.Services
         /// <returns></returns>
         private static Paragraph CreateNewRouteSection(string path)
         {
-            Paragraph paragraph = new Paragraph();
+            ParagraphProperties properties = new ParagraphProperties(new SpacingBetweenLines { After = "0"});
+            Paragraph paragraph = new Paragraph(properties);
             Run run = paragraph.AppendChild(new Run());
-            run.AppendChild(Format.CreateBoldTextLine(path, HEADING_FONT_SIZE));
             run.AppendChild(new CarriageReturn());
+            run.AppendChild(Format.CreateBoldTextLine(path, HEADING_FONT_SIZE));
 
             return paragraph;
         }
@@ -514,9 +514,12 @@ namespace APIDocGenerator.Services
         /// <param name="type"></param>
         /// <param name="details"></param>
         /// <returns></returns>
-        private Paragraph CreateNewRequestTypeSection(string type, RequestType details)
+        private List<OpenXmlElement> CreateNewRequestTypeSection(string type, RequestType details)
         {
-            Paragraph container = new Paragraph();
+            List<OpenXmlElement> sections = new List<OpenXmlElement>();
+
+            ParagraphProperties properties = new ParagraphProperties(new SpacingBetweenLines { After = "0" });
+            Paragraph container = new Paragraph(properties);
             Run run = container.AppendChild(new Run());
             RunProperties props = new RunProperties();
             props.FontSize = new FontSize() { Val = TEXT_FONT_SIZE };
@@ -544,49 +547,47 @@ namespace APIDocGenerator.Services
             {
                 Run next = container.AppendChild(new Run());
                 next.AppendChild(Format.CreateTextLine(details.Summary, TEXT_FONT_SIZE));
-                next.AppendChild(new CarriageReturn());
             }
-            else
-            {
-                run.AppendChild(new CarriageReturn());
-            }
+
+            sections.Add(container);
 
             if (details.Parameters != null)
             {
-                container.AppendChild(CreateNewParameterSection(details.Parameters));
+                sections.AddRange(CreateNewParameterSection(details.Parameters));
             }
 
             if (details.RequestBody != null) 
             {
-                container.AppendChild(CreateNewRequestBodySection(details.RequestBody));
+                sections.AddRange(CreateNewRequestBodySection(details.RequestBody));
             }
 
             if (details.Responses != null)
             {
-                container.AppendChild(CreateNewResponseSection(details.Responses));
+                sections.AddRange(CreateNewResponseSection(details.Responses));
             }
 
-
-
-            return container;
+            return sections;
         }
 
         /// <summary>
         /// Create a new Parameter section for a HTTP request type.
         /// </summary>
         /// <returns></returns>
-        private Paragraph CreateNewParameterSection(IEnumerable<Parameter> parameters)
+        private List<OpenXmlElement> CreateNewParameterSection(IEnumerable<Parameter> parameters)
         {
-            Paragraph container = new Paragraph();
-            Run paramSection = container.AppendChild(new Run());
-            paramSection.AppendChild(Format.CreateBoldTextLine("Parameters", TEXT_FONT_SIZE));
-            paramSection.AppendChild(new CarriageReturn());
+            List<OpenXmlElement> elements = new List<OpenXmlElement>();
+
+            ParagraphProperties properties = new ParagraphProperties(new SpacingBetweenLines { After = "0" });
+            Paragraph container = new Paragraph(properties);
+            //Run paramSection = container.AppendChild(new Run());
+            container.AppendChild(Format.CreateBoldTextLine("Parameters", TEXT_FONT_SIZE));
+            elements.Add(container);
 
             foreach (Parameter param in parameters)
             {
-                container.AppendChild(CreateNewParameter(param));
+                elements.Add(CreateNewParameter(param));
             }
-            return container;
+            return elements;
         }
 
         /// <summary>
@@ -629,54 +630,61 @@ namespace APIDocGenerator.Services
         /// </summary>
         /// <param name="body"></param>
         /// <returns></returns>
-        private Run CreateNewRequestBodySection(RequestBody body)
+        private List<OpenXmlElement> CreateNewRequestBodySection(RequestBody body)
         {
-            Run container = new Run();
-            Run reqBody = container.AppendChild(new Run());
+            List<OpenXmlElement> elements = new List<OpenXmlElement>();
+
+            ParagraphProperties properties = new ParagraphProperties(new SpacingBetweenLines { After = "0" });
+            Paragraph reqBody = new Paragraph(properties);
             reqBody.AppendChild(Format.CreateBoldTextLine("Request Body", TEXT_FONT_SIZE));
-            reqBody.AppendChild(new CarriageReturn());
+            elements.Add(reqBody);
 
             if (!string.IsNullOrEmpty(body.Description))
             {
-                Run description = container.AppendChild(new Run());
+                Run description = new Run();
                 description.AppendChild(new TabChar());
                 description.AppendChild(Format.CreateTextLine(body.Description, JSON_FONT_SIZE));
                 description.AppendChild(new CarriageReturn());
+                elements.Add(description);
             }
             
             if (body.Content.TryGetValue("application/json", out Content? appJsonContent))
             {
-                Run appJson = container.AppendChild(new Run());
+                Run appJson = new Run();
                 appJson.AppendChild(new TabChar());
                 appJson.AppendChild(Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE));
                 appJson.AppendChild(new CarriageReturn());
                 appJson.AppendChild(CreateFormattedSchema(appJsonContent.Schema, 2));
+                elements.Add(appJson);
             }
 
             if(body.Content.TryGetValue("multipart/form-data", out Content? formData))
             {
-                Run formRun = container.AppendChild(new Run());
+                Run formRun = new Run();
                 formRun.AppendChild(new TabChar());
                 formRun.AppendChild(Format.CreateBoldTextLine("multipart/form-data", JSON_FONT_SIZE));
                 formRun.AppendChild(new CarriageReturn());
                 formRun.AppendChild(CreateFormattedSchema(formData.Schema, 2));
+                elements.Add(formRun);
             }
 
-            return container;
+            return elements;
         }
 
-        private Run CreateNewResponseSection(Dictionary<string, Response> responses)
+        private List<OpenXmlElement> CreateNewResponseSection(Dictionary<string, Response> responses)
         {
-            Run container = new Run();
-            Run responseRun = container.AppendChild(new Run());
-            responseRun.AppendChild(Format.CreateBoldTextLine("Responses", TEXT_FONT_SIZE));
-            responseRun.AppendChild(new CarriageReturn());
+            List<OpenXmlElement> elements = new List<OpenXmlElement>();
+
+            ParagraphProperties properties = new ParagraphProperties(new SpacingBetweenLines { After = "0" });
+            Paragraph responseParagraph = new Paragraph(properties);
+            responseParagraph.AppendChild(Format.CreateBoldTextLine("Responses", TEXT_FONT_SIZE));
+            elements.Add(responseParagraph);
 
             foreach(KeyValuePair<string, Response> response in responses)
             {
                 string code = response.Key;
                 Response responseValue = response.Value;
-                Run run = container.AppendChild(new Run());
+                Run run = new Run();
                 run.AppendChild(new TabChar());
                 run.AppendChild(Format.CreateLabelValuePair($"{code}: ", responseValue.Description, JSON_FONT_SIZE));
                 run.AppendChild(new CarriageReturn());
@@ -689,9 +697,11 @@ namespace APIDocGenerator.Services
 
                     run.AppendChild(CreateFormattedSchema(appJsonContent.Schema, 2));
                 }
+
+                elements.Add(run);
             }
 
-            return container;
+            return elements;
         }
 
         /// <summary>
@@ -701,19 +711,13 @@ namespace APIDocGenerator.Services
         /// <returns></returns>
         private static Paragraph CreateNewControllerHeading(string controllerName)
         {
-            Paragraph paragraph = new Paragraph();
-            if (!paragraph.Elements<ParagraphProperties>().Any())
-            {
-                paragraph.PrependChild(new ParagraphProperties());
-            }
-
             Justification centered = new Justification() { Val = JustificationValues.Center };
-            paragraph.ParagraphProperties?.Append(centered);
+            ParagraphProperties props = new ParagraphProperties(centered);
+            Paragraph paragraph = new Paragraph(props);
 
-            Run run = paragraph.AppendChild(new Run());
+            paragraph.AppendChild(new CarriageReturn());
             string headingText = $"{controllerName} Endpoints";
-            run.AppendChild(Format.CreateBoldTextLine(headingText, TITLE_FONT_SIZE));
-            run.AppendChild(new CarriageReturn());
+            paragraph.AppendChild(Format.CreateBoldTextLine(headingText, TITLE_FONT_SIZE));
             
             return paragraph;
         }
@@ -860,19 +864,19 @@ namespace APIDocGenerator.Services
         /// Appends all the created paragraphs to the current document body in order they were added.
         /// </summary>
         /// <param name="paragraphs"></param>
-        private void CompileDocument(Dictionary<string, List<Paragraph>> paragraphs)
+        private void CompileDocument(Dictionary<string, List<OpenXmlElement>> paragraphs)
         {
-            foreach(KeyValuePair<string, Paragraph> components in _componentBulletLists)
+            foreach(KeyValuePair<string, OpenXmlElement> components in _componentBulletLists)
             {
                 Body.AppendChild(components.Value);
             }
 
-            foreach (KeyValuePair<string, List<Paragraph>> items in paragraphs) 
+            foreach (KeyValuePair<string, List<OpenXmlElement>> items in paragraphs) 
             {
-                Paragraph heading = CreateNewControllerHeading(items.Key);
+                OpenXmlElement heading = CreateNewControllerHeading(items.Key);
                 Body.AppendChild(heading);
 
-                foreach (Paragraph paragraph in items.Value) 
+                foreach (OpenXmlElement paragraph in items.Value) 
                 {
                     Body.AppendChild(paragraph);
                 }               
