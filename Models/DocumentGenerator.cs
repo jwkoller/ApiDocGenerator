@@ -20,7 +20,7 @@ namespace APIDocGenerator.Services
         private string _destinationFolder;
         private Components _jsonComponents;
         private NumberingDefinitionsPart _numberingDefinitionsPart;
-        private Dictionary<string, OpenXmlElement> _componentBulletLists;
+        //private Dictionary<string, OpenXmlElement> _componentBulletLists;
 
         public string DocumentName { get; private set; }
         public WordprocessingDocument Document { get; private set; }
@@ -30,7 +30,7 @@ namespace APIDocGenerator.Services
         public DocumentGenerator(string destination, string fileName)
         {
             _destinationFolder = destination;
-            _componentBulletLists = new Dictionary<string, OpenXmlElement>();
+            //_componentBulletLists = new Dictionary<string, OpenXmlElement>();
             DocumentName = fileName;
         }
 
@@ -51,6 +51,13 @@ namespace APIDocGenerator.Services
         /// <returns></returns>
         private int CreateNewBulletedList()
         {
+            if (MainPart.NumberingDefinitionsPart == null)
+            {
+                _numberingDefinitionsPart = MainPart.AddNewPart<NumberingDefinitionsPart>("NumberDefintionsPart01");
+                Numbering element = new Numbering();
+                element.Save(_numberingDefinitionsPart);
+            }
+
             int abstractId = _numberingDefinitionsPart.Numbering.Elements<AbstractNum>().Count() + 1;
             Level abstractLevel = new Level(new NumberingFormat { Val = NumberFormatValues.None }, new LevelText { Val = "" }) { LevelIndex = 0 };
             AbstractNum abstractNum = new AbstractNum(abstractLevel) { AbstractNumberId = abstractId };
@@ -86,35 +93,35 @@ namespace APIDocGenerator.Services
         /// <summary>
         /// Creates bulleted lists out of any component schemas and adds them to the internal dictionary for use.
         /// </summary>
-        private void CreateComponentBulletParagraphs()
-        {
-            if(MainPart.NumberingDefinitionsPart == null)
-            {
-                _numberingDefinitionsPart = MainPart.AddNewPart<NumberingDefinitionsPart>("NumberDefintionsPart01");
-                Numbering element = new Numbering();
-                element.Save(_numberingDefinitionsPart);
-            }
+        //private void CreateComponentBulletParagraphs()
+        //{
+        //    if(MainPart.NumberingDefinitionsPart == null)
+        //    {
+        //        _numberingDefinitionsPart = MainPart.AddNewPart<NumberingDefinitionsPart>("NumberDefintionsPart01");
+        //        Numbering element = new Numbering();
+        //        element.Save(_numberingDefinitionsPart);
+        //    }
 
-            foreach(KeyValuePair<string, Schema> componentSchema in _jsonComponents.Schemas)
-            {
-                string componentName = componentSchema.Key;
-                Schema schema = componentSchema.Value;
-                if (!string.IsNullOrEmpty(schema.Ref))
-                {
-                    schema = GetSchemaComponent(schema.Ref);
-                }
+        //    foreach(KeyValuePair<string, Schema> componentSchema in _jsonComponents.Schemas)
+        //    {
+        //        string componentName = componentSchema.Key;
+        //        Schema schema = componentSchema.Value;
+        //        if (!string.IsNullOrEmpty(schema.Ref))
+        //        {
+        //            schema = GetSchemaComponent(schema.Ref);
+        //        }
 
-                int listNumberId = CreateNewBulletedList();
+        //        int listNumberId = CreateNewBulletedList();
 
-                int startingIndent = 0;
+        //        int startingIndent = 0;
 
-                Run formattedSchema = CreateSchemaFormattedBulletList(startingIndent, schema, listNumberId);
-                Paragraph componentContainer = new Paragraph();
-                componentContainer.AppendChild(formattedSchema);
+        //        Run formattedSchema = CreateSchemaFormattedBulletList(startingIndent, schema, listNumberId);
+        //        Paragraph componentContainer = new Paragraph();
+        //        componentContainer.AppendChild(formattedSchema);
 
-                _componentBulletLists.Add(componentName, componentContainer);
-            }
-        }
+        //        _componentBulletLists.Add(componentName, componentContainer);
+        //    }
+        //}
 
         /// <summary>
         /// Formats a single schema and it's properties into a bulleted list
@@ -430,7 +437,7 @@ namespace APIDocGenerator.Services
             _jsonComponents = apiRoot.Components;
 
             CreateBlankDocument();
-            CreateComponentBulletParagraphs();
+            //CreateComponentBulletParagraphs();
 
             string version = !string.IsNullOrEmpty(apiRoot.Info?.Version) ? $" v{apiRoot.Info.Version}" : string.Empty;
             AddTitleLine($"{DocumentName}{version}");
@@ -639,35 +646,38 @@ namespace APIDocGenerator.Services
             reqBody.AppendChild(Format.CreateBoldTextLine("Request Body", TEXT_FONT_SIZE));
             elements.Add(reqBody);
 
+            int bulletId = CreateNewBulletedList();
+
+            Run container = new Run();
+
             if (!string.IsNullOrEmpty(body.Description))
             {
-                Run description = new Run();
-                description.AppendChild(new TabChar());
-                description.AppendChild(Format.CreateTextLine(body.Description, JSON_FONT_SIZE));
-                description.AppendChild(new CarriageReturn());
-                elements.Add(description);
+                Run description = Format.CreateTextLine(body.Description, JSON_FONT_SIZE);
+                reqBody.AppendChild(new CarriageReturn());
+                reqBody.AppendChild(description);
             }
             
             if (body.Content.TryGetValue("application/json", out Content? appJsonContent))
             {
-                Run appJson = new Run();
-                appJson.AppendChild(new TabChar());
-                appJson.AppendChild(Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE));
-                appJson.AppendChild(new CarriageReturn());
-                appJson.AppendChild(CreateFormattedSchema(appJsonContent.Schema, 2));
-                elements.Add(appJson);
+                Run appJson = Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE);
+                Paragraph appJsonParagraph = Format.CreateBulletedListItem(bulletId, 0, appJson);
+                container.AppendChild(appJsonParagraph);
+
+                Run schemaRun = CreateSchemaFormattedBulletList(1, appJsonContent.Schema, bulletId);
+                container.AppendChild(schemaRun);
             }
 
             if(body.Content.TryGetValue("multipart/form-data", out Content? formData))
             {
-                Run formRun = new Run();
-                formRun.AppendChild(new TabChar());
-                formRun.AppendChild(Format.CreateBoldTextLine("multipart/form-data", JSON_FONT_SIZE));
-                formRun.AppendChild(new CarriageReturn());
-                formRun.AppendChild(CreateFormattedSchema(formData.Schema, 2));
-                elements.Add(formRun);
+                Run formRun = Format.CreateBoldTextLine("multipart/form-data", JSON_FONT_SIZE);
+                Paragraph formParagraph = Format.CreateBulletedListItem(bulletId, 0, formRun);
+                container.AppendChild(formParagraph);
+
+                Run schemaRun = CreateSchemaFormattedBulletList(1, formData.Schema, bulletId);
+                container.AppendChild(schemaRun);
             }
 
+            elements.Add(container);
             return elements;
         }
 
@@ -866,10 +876,10 @@ namespace APIDocGenerator.Services
         /// <param name="paragraphs"></param>
         private void CompileDocument(Dictionary<string, List<OpenXmlElement>> paragraphs)
         {
-            foreach(KeyValuePair<string, OpenXmlElement> components in _componentBulletLists)
-            {
-                Body.AppendChild(components.Value);
-            }
+            //foreach(KeyValuePair<string, OpenXmlElement> components in _componentBulletLists)
+            //{
+            //    Body.AppendChild(components.Value);
+            //}
 
             foreach (KeyValuePair<string, List<OpenXmlElement>> items in paragraphs) 
             {
