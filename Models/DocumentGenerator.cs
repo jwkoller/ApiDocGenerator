@@ -20,7 +20,6 @@ namespace APIDocGenerator.Services
         private string _destinationFolder;
         private Components _jsonComponents;
         private NumberingDefinitionsPart _numberingDefinitionsPart;
-        //private Dictionary<string, OpenXmlElement> _componentBulletLists;
 
         public string DocumentName { get; private set; }
         public WordprocessingDocument Document { get; private set; }
@@ -89,39 +88,6 @@ namespace APIDocGenerator.Services
 
             return numberId;
         }
-
-        /// <summary>
-        /// Creates bulleted lists out of any component schemas and adds them to the internal dictionary for use.
-        /// </summary>
-        //private void CreateComponentBulletParagraphs()
-        //{
-        //    if(MainPart.NumberingDefinitionsPart == null)
-        //    {
-        //        _numberingDefinitionsPart = MainPart.AddNewPart<NumberingDefinitionsPart>("NumberDefintionsPart01");
-        //        Numbering element = new Numbering();
-        //        element.Save(_numberingDefinitionsPart);
-        //    }
-
-        //    foreach(KeyValuePair<string, Schema> componentSchema in _jsonComponents.Schemas)
-        //    {
-        //        string componentName = componentSchema.Key;
-        //        Schema schema = componentSchema.Value;
-        //        if (!string.IsNullOrEmpty(schema.Ref))
-        //        {
-        //            schema = GetSchemaComponent(schema.Ref);
-        //        }
-
-        //        int listNumberId = CreateNewBulletedList();
-
-        //        int startingIndent = 0;
-
-        //        Run formattedSchema = CreateSchemaFormattedBulletList(startingIndent, schema, listNumberId);
-        //        Paragraph componentContainer = new Paragraph();
-        //        componentContainer.AppendChild(formattedSchema);
-
-        //        _componentBulletLists.Add(componentName, componentContainer);
-        //    }
-        //}
 
         /// <summary>
         /// Formats a single schema and it's properties into a bulleted list
@@ -458,6 +424,7 @@ namespace APIDocGenerator.Services
                 if(routeDetails.Get != null)
                 {
                     elements.AddRange(CreateNewRequestTypeSection("GET", routeDetails.Get));
+                    elements.Add(new CarriageReturn());
 
                     controllerName = routeDetails.Get.Tags.First();           
                 }
@@ -465,6 +432,7 @@ namespace APIDocGenerator.Services
                 if (routeDetails.Put != null) 
                 {
                     elements.AddRange(CreateNewRequestTypeSection("PUT", routeDetails.Put));
+                    elements.Add(new CarriageReturn());
 
                     controllerName = routeDetails.Put.Tags.First();
                 }
@@ -472,6 +440,7 @@ namespace APIDocGenerator.Services
                 if (routeDetails.Post != null)
                 {
                     elements.AddRange(CreateNewRequestTypeSection("POST", routeDetails.Post));
+                    elements.Add(new CarriageReturn());
 
                     controllerName = routeDetails.Post.Tags.First();
                 }
@@ -479,6 +448,7 @@ namespace APIDocGenerator.Services
                 if (routeDetails.Delete != null)
                 {
                     elements.AddRange(CreateNewRequestTypeSection("DELETE", routeDetails.Delete));
+                    elements.Add(new CarriageReturn());
 
                     controllerName = routeDetails.Delete.Tags.First();
                 }
@@ -508,7 +478,6 @@ namespace APIDocGenerator.Services
             ParagraphProperties properties = new ParagraphProperties(new SpacingBetweenLines { After = "0"});
             Paragraph paragraph = new Paragraph(properties);
             Run run = paragraph.AppendChild(new Run());
-            run.AppendChild(new CarriageReturn());
             run.AppendChild(Format.CreateBoldTextLine(path, HEADING_FONT_SIZE));
 
             return paragraph;
@@ -690,27 +659,30 @@ namespace APIDocGenerator.Services
             responseParagraph.AppendChild(Format.CreateBoldTextLine("Responses", TEXT_FONT_SIZE));
             elements.Add(responseParagraph);
 
+            Run container = new Run();
+
             foreach(KeyValuePair<string, Response> response in responses)
             {
                 string code = response.Key;
                 Response responseValue = response.Value;
-                Run run = new Run();
-                run.AppendChild(new TabChar());
-                run.AppendChild(Format.CreateLabelValuePair($"{code}: ", responseValue.Description, JSON_FONT_SIZE));
-                run.AppendChild(new CarriageReturn());
+
+                int bulletId = CreateNewBulletedList();
+                Run codeRun = Format.CreateLabelValuePair($"{code}: ", responseValue.Description, JSON_FONT_SIZE);
+                Paragraph codeParagraph = Format.CreateBulletedListItem(bulletId, 0, codeRun);
+                container.AppendChild(codeParagraph);
 
                 if (responseValue.Content != null && responseValue.Content.TryGetValue("application/json", out Content? appJsonContent)) 
                 {
-                    run.AppendChild(new TabChar());
-                    run.AppendChild(Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE));
-                    run.AppendChild(new CarriageReturn());
+                    Run responseTypRun = Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE);
+                    Paragraph responseTypeParagraph  = Format.CreateBulletedListItem(bulletId, 1, responseTypRun);
+                    container.AppendChild(responseTypeParagraph);
 
-                    run.AppendChild(CreateFormattedSchema(appJsonContent.Schema, 2));
+                    Run schemaRun = CreateSchemaFormattedBulletList(2, appJsonContent.Schema, bulletId);
+                    container.AppendChild(schemaRun);
                 }
-
-                elements.Add(run);
             }
 
+            elements.Add(container);
             return elements;
         }
 
@@ -724,138 +696,11 @@ namespace APIDocGenerator.Services
             Justification centered = new Justification() { Val = JustificationValues.Center };
             ParagraphProperties props = new ParagraphProperties(centered);
             Paragraph paragraph = new Paragraph(props);
-
-            paragraph.AppendChild(new CarriageReturn());
+            
             string headingText = $"{controllerName} Endpoints";
             paragraph.AppendChild(Format.CreateBoldTextLine(headingText, TITLE_FONT_SIZE));
-            
+
             return paragraph;
-        }
-
-        /// <summary>
-        /// Creates a formatted section for a given schema, recursively drilling down to sub-properties. Number of tab indentations
-        /// is tracked so I don't have to mess with a bulleted list cause it's a giant pita in OpenXMl.
-        /// </summary>
-        /// <param name="schemaToFormat"></param>
-        /// <param name="numTabs"></param>
-        /// <returns></returns>
-        private Run CreateFormattedSchema(Schema schemaToFormat, int numTabs = 0)
-        {
-            Schema schema = schemaToFormat;
-            if (!string.IsNullOrEmpty(schema.Ref))
-            {
-                schema = GetSchemaComponent(schema.Ref);
-            }
-
-            Run container = new Run();
-
-            if (schema.Type == "object")
-            {
-                foreach (KeyValuePair<string, Schema> objProps in schema.Properties)
-                {
-                    string propName = objProps.Key;
-                    Schema propSchema = objProps.Value;
-
-                    Run propertyRun = container.AppendChild(new Run());
-                    for (int i = 0; i < numTabs; i++)
-                    {
-                        propertyRun.AppendChild(new TabChar());
-                    }
-
-                    if (!string.IsNullOrEmpty(propSchema.Ref))
-                    {
-                        propSchema = GetSchemaComponent(propSchema.Ref);
-                        if(propSchema == schema)
-                        {
-                            propertyRun.AppendChild(Format.CreateLabelValuePair($"{propName}: ", "Same object type as parent", JSON_FONT_SIZE));
-                            propertyRun.AppendChild(new CarriageReturn());
-                        } else
-                        {
-                            Run propParagraph = propertyRun.AppendChild(new Run());
-                            propParagraph.AppendChild(CreateFormattedSchema(propSchema, numTabs + 1));
-                        }
-
-                    } else
-                    {
-                        propertyRun.AppendChild(Format.CreateLabelValuePair($"{propName}: ", propSchema.DisplayTypeText, JSON_FONT_SIZE));
-                        propertyRun.AppendChild(new CarriageReturn());
-
-                        if (propSchema.Items != null)
-                        {
-                            propertyRun.AppendChild(CreateFormattedSchema(propSchema, numTabs + 1));
-
-                        } else
-                        {
-                            // if there are items, it's an array and we'll let the description fall under it
-                            if (!string.IsNullOrEmpty(propSchema.Description))
-                            {
-                                for (int i = 0; i < numTabs; i++)
-                                {
-                                    propertyRun.AppendChild(new TabChar());
-                                }
-                                propertyRun.AppendChild(Format.CreateTextLine(propSchema.Description, JSON_FONT_SIZE));
-                                propertyRun.AppendChild(new CarriageReturn());
-                            }
-                        }
-                    }
-                }
-            }
-            else if (schema.Type == "array")
-            {
-                Run arrayRun = container.AppendChild(new Run());
-
-                for (int i = 0; i < numTabs; i++)
-                {
-                    arrayRun.AppendChild(new TabChar());
-                }
-
-                string valueText = !string.IsNullOrEmpty(schema.Items.Ref) ? "object" : schema.Items.DisplayTypeText;
-                arrayRun.AppendChild(Format.CreateLabelValuePair("Array Content: ", valueText, JSON_FONT_SIZE));
-                arrayRun.AppendChild(new CarriageReturn());
-
-                if (!string.IsNullOrEmpty(schema.Description))
-                {
-                    Paragraph desc = arrayRun.AppendChild(new Paragraph());
-
-                    for (int i = 0; i < numTabs; i++)
-                    {
-                        desc.AppendChild(new TabChar());
-                    }
-                    desc.AppendChild(Format.CreateTextLine(schema.Description, JSON_FONT_SIZE));
-                    arrayRun.AppendChild(new CarriageReturn());
-                }
-
-                if (valueText == "object")
-                {
-                    Run itemsRun = arrayRun.AppendChild(new Run());
-                    itemsRun.AppendChild(CreateFormattedSchema(schema.Items, numTabs + 1));
-                }
-            }
-            else
-            {
-                Run itemRun = container.AppendChild(new Run());
-
-                for (int i = 0; i < numTabs; i++)
-                {
-                    itemRun.AppendChild(new TabChar());
-                }
-
-                itemRun.AppendChild(Format.CreateTextLine(schema.DisplayTypeText, JSON_FONT_SIZE));
-
-                if (!string.IsNullOrEmpty(schema.Description))
-                {
-                    itemRun.AppendChild(new CarriageReturn());
-                    Paragraph desc = itemRun.AppendChild(new Paragraph());
-
-                    for (int i = 0; i < numTabs; i++)
-                    {
-                        desc.AppendChild(new TabChar());
-                    }
-                    desc.AppendChild(Format.CreateTextLine(schema.Description, JSON_FONT_SIZE));
-                }
-            }
-
-            return container;
         }
 
         /// <summary>
