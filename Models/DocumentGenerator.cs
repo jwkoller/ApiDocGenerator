@@ -517,8 +517,8 @@ namespace APIDocGenerator.Services
                     break;
             }
 
-            run.Append(props);
-            run.AppendChild(new Text() { Text = $"{type}: ", Space = SpaceProcessingModeValues.Preserve });
+            run.AppendChild(Format.CreateTextLine($"{type}: ", props));
+
             if (!string.IsNullOrEmpty(details.Summary))
             {
                 Run next = container.AppendChild(new Run());
@@ -721,11 +721,6 @@ namespace APIDocGenerator.Services
         /// <param name="paragraphs"></param>
         private void CompileDocument(Dictionary<string, List<OpenXmlElement>> paragraphs)
         {
-            //foreach(KeyValuePair<string, OpenXmlElement> components in _componentBulletLists)
-            //{
-            //    Body.AppendChild(components.Value);
-            //}
-
             foreach (KeyValuePair<string, List<OpenXmlElement>> items in paragraphs) 
             {
                 OpenXmlElement heading = CreateNewControllerHeading(items.Key);
