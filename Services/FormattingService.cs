@@ -41,7 +41,7 @@ namespace APIDocGenerator.Services
             RunProperties textProps = new RunProperties
             {
                 FontSize = new FontSize { Val = fontSize },
-                Bold = new Bold()
+                Bold = new Bold(),
             };
 
             return CreateTextLine(text, textProps);
@@ -59,11 +59,12 @@ namespace APIDocGenerator.Services
         public static Paragraph CreateBulletedListItem(int numberingId, int indent, Run text)
         {
             int indentUnitSize = 240;
-            string indentValue = $"{indent * indentUnitSize}";
+            string indentValue = $"{(indent + 1) * indentUnitSize}";
 
             var propNumberProps = new NumberingProperties(new NumberingLevelReference { Val = 0 }, new NumberingId { Val = numberingId });
             var propSpaceBetween = new SpacingBetweenLines { After = "0" };
-            var propIndentation = new Indentation { Left = indentValue };
+            
+            var propIndentation = new Indentation { Left = indentValue, Hanging = "300" };
 
             Paragraph paragraph = new Paragraph(new ParagraphProperties(propNumberProps, propSpaceBetween, propIndentation));
             paragraph.AppendChild(text);

@@ -555,7 +555,7 @@ namespace APIDocGenerator.Services
 
             ParagraphProperties properties = new ParagraphProperties(new SpacingBetweenLines { After = "0" });
             Paragraph container = new Paragraph(properties);
-            //Run paramSection = container.AppendChild(new Run());
+
             container.AppendChild(Format.CreateBoldTextLine("Parameters", TEXT_FONT_SIZE));
             elements.Add(container);
 
@@ -629,20 +629,20 @@ namespace APIDocGenerator.Services
             if (body.Content.TryGetValue("application/json", out Content? appJsonContent))
             {
                 Run appJson = Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE);
-                Paragraph appJsonParagraph = Format.CreateBulletedListItem(bulletId, 0, appJson);
+                Paragraph appJsonParagraph = Format.CreateBulletedListItem(bulletId, 1, appJson);
                 container.AppendChild(appJsonParagraph);
 
-                Run schemaRun = CreateSchemaFormattedBulletList(1, appJsonContent.Schema, bulletId);
+                Run schemaRun = CreateSchemaFormattedBulletList(2, appJsonContent.Schema, bulletId);
                 container.AppendChild(schemaRun);
             }
 
             if(body.Content.TryGetValue("multipart/form-data", out Content? formData))
             {
                 Run formRun = Format.CreateBoldTextLine("multipart/form-data", JSON_FONT_SIZE);
-                Paragraph formParagraph = Format.CreateBulletedListItem(bulletId, 0, formRun);
+                Paragraph formParagraph = Format.CreateBulletedListItem(bulletId, 1, formRun);
                 container.AppendChild(formParagraph);
 
-                Run schemaRun = CreateSchemaFormattedBulletList(1, formData.Schema, bulletId);
+                Run schemaRun = CreateSchemaFormattedBulletList(2, formData.Schema, bulletId);
                 container.AppendChild(schemaRun);
             }
 
@@ -668,16 +668,16 @@ namespace APIDocGenerator.Services
 
                 int bulletId = CreateNewBulletedList();
                 Run codeRun = Format.CreateLabelValuePair($"{code}: ", responseValue.Description, JSON_FONT_SIZE);
-                Paragraph codeParagraph = Format.CreateBulletedListItem(bulletId, 0, codeRun);
+                Paragraph codeParagraph = Format.CreateBulletedListItem(bulletId, 1, codeRun);
                 container.AppendChild(codeParagraph);
 
                 if (responseValue.Content != null && responseValue.Content.TryGetValue("application/json", out Content? appJsonContent)) 
                 {
                     Run responseTypRun = Format.CreateBoldTextLine("application/json", JSON_FONT_SIZE);
-                    Paragraph responseTypeParagraph  = Format.CreateBulletedListItem(bulletId, 1, responseTypRun);
+                    Paragraph responseTypeParagraph  = Format.CreateBulletedListItem(bulletId, 2, responseTypRun);
                     container.AppendChild(responseTypeParagraph);
 
-                    Run schemaRun = CreateSchemaFormattedBulletList(2, appJsonContent.Schema, bulletId);
+                    Run schemaRun = CreateSchemaFormattedBulletList(3, appJsonContent.Schema, bulletId);
                     container.AppendChild(schemaRun);
                 }
             }
