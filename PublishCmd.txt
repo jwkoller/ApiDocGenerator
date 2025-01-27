@@ -1,1 +1,1 @@
-﻿msbuild /restore /t:Publish /p:TargetFramework=net8.0-windows10.0.19041.0 /p:configuration=release /p:WindowsAppSDKSelfContained=true /p:Platform="Any CPU" /p:PublishSingleFile=true /p:WindowsPackageType=None /p:RuntimeIdentifier=win10-x64
+﻿msbuild /restore /t:Publish /p:TargetFramework=net8.0-windows10.0.19041 /p:configuration=release /p:WindowsAppSDKSelfContained=true /p:Platform="Any CPU" /p:PublishSingleFile=true /p:WindowsPackageType=None /p:RuntimeIdentifier=win10-x64
